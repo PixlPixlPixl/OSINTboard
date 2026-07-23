@@ -63,6 +63,13 @@ export const NODE_TYPES = [
     description: 'IP address intelligence',
   },
   {
+    type: 'external-link',
+    label: 'External Link',
+    icon: '🔗',
+    color: '#ff8a65',
+    description: 'URL link — YouTube embeds a player',
+  },
+  {
     type: 'note',
     label: 'Note',
     icon: '📝',
