@@ -1,0 +1,354 @@
+/* ============================
+   OSINTboard — CAD-Style Theme
+   White on Black, Clean Lines
+   ============================ */
+
+:root {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --text-muted: #555555;
+  --border-color: #2a2a2a;
+  --accent: #4fc3f7;
+  --sidebar-width: 260px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+}
+
+.app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================
+   SIDEBAR
+   ========================================== */
+
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  height: 100%;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  user-select: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.sidebar-header {
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+.sidebar-instructions {
+  padding: 12px 16px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.key-hint {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  border: 1px solid #333;
+}
+
+.sidebar-nodes {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.sidebar-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: grab;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  background: transparent;
+}
+
+.sidebar-node:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+.sidebar-node:active {
+  cursor: grabbing;
+  background: #222;
+  transform: scale(0.97);
+}
+
+.sidebar-node-icon {
+  font-size: 18px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-node-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-node-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-node-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-btn:hover {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #555;
+}
+
+/* ==========================================
+   CANVAS
+   ========================================== */
+
+.canvas-wrapper {
+  flex: 1;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+/* Override React Flow default styles */
+.react-flow {
+  background: var(--bg-primary) !important;
+}
+
+.react-flow__background {
+  background: var(--bg-primary) !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__edge-path {
+  stroke: #666;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #aaa;
+}
+
+.react-flow__edge-textbg {
+  fill: #111;
+}
+
+.react-flow__edge-text {
+  fill: #888;
+  font-size: 10px;
+}
+
+.react-flow__connection-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+}
+
+/* Selection box */
+.react-flow__selection {
+  background: rgba(79, 195, 247, 0.08) !important;
+  border: 1px solid rgba(79, 195, 247, 0.4) !important;
+}
+
+/* ==========================================
+   CUSTOM OSINT NODES
+   ========================================== */
+
+.osint-node {
+  background: #121212;
+  border: 1px solid #555;
+  border-radius: 8px;
+  min-width: 160px;
+  max-width: 240px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.osint-node:hover {
+  border-color: #888;
+  background: #181818;
+}
+
+.osint-node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(79, 195, 247, 0.15), 0 0 0 1px var(--accent);
+}
+
+.osint-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+}
+
+.osint-node-icon {
+  font-size: 14px;
+}
+
+.osint-node-type-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.osint-node-body {
+  padding: 10px 12px;
+  min-height: 28px;
+}
+
+.osint-node-label {
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.osint-node-placeholder {
+  color: #555;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.osint-node-input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+}
+
+.osint-node-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* ==========================================
+   CONTROLS OVERRIDES
+   ========================================== */
+
+.react-flow__controls-button {
+  background: #111 !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  fill: #888 !important;
+  transition: all 0.15s ease;
+}
+
+.react-flow__controls-button:hover {
+  background: #222 !important;
+  fill: #fff !important;
+}
+
+.react-flow__controls-button svg {
+  fill: inherit !important;
+}
+
+/* ==========================================
+   MINIMAP OVERRIDES
+   ========================================== */
+
+.react-flow__minimap {
+  border-radius: 8px !important;
+}

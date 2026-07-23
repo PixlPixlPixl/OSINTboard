@@ -1,0 +1,90 @@
+export const NODE_TYPES = [
+  {
+    type: 'person',
+    label: 'Person / Contact',
+    icon: '👤',
+    color: '#4fc3f7',
+    description: 'A person of interest',
+  },
+  {
+    type: 'phone',
+    label: 'Phone Number',
+    icon: '📞',
+    color: '#81c784',
+    description: 'Phone number intelligence',
+  },
+  {
+    type: 'email',
+    label: 'Email Address',
+    icon: '✉️',
+    color: '#ffb74d',
+    description: 'Email intelligence',
+  },
+  {
+    type: 'address',
+    label: 'Address',
+    icon: '📍',
+    color: '#e57373',
+    description: 'Physical address',
+  },
+  {
+    type: 'social',
+    label: 'Social Media',
+    icon: '📱',
+    color: '#ce93d8',
+    description: 'Social media profile',
+  },
+  {
+    type: 'url',
+    label: 'URL / Website',
+    icon: '🔗',
+    color: '#4dd0e1',
+    description: 'Website or link',
+  },
+  {
+    type: 'company',
+    label: 'Company',
+    icon: '🏢',
+    color: '#ffd54f',
+    description: 'Organization / Business',
+  },
+  {
+    type: 'username',
+    label: 'Username',
+    icon: '👤',
+    color: '#aed581',
+    description: 'Online username / handle',
+  },
+  {
+    type: 'ip',
+    label: 'IP Address',
+    icon: '🖥️',
+    color: '#90a4ae',
+    description: 'IP address intelligence',
+  },
+  {
+    type: 'note',
+    label: 'Note',
+    icon: '📝',
+    color: '#fff',
+    description: 'Investigator note',
+  },
+  {
+    type: 'date',
+    label: 'Date / Event',
+    icon: '📅',
+    color: '#f06292',
+    description: 'Date or event marker',
+  },
+  {
+    type: 'document',
+    label: 'Document',
+    icon: '📄',
+    color: '#b0bec5',
+    description: 'Document reference',
+  },
+];
+
+export const NODE_TYPE_MAP = Object.fromEntries(
+  NODE_TYPES.map((nt) => [nt.type, nt])
+);
