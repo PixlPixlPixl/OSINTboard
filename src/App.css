@@ -86,6 +86,21 @@ html, body, #root {
   margin-top: 4px;
 }
 
+.sidebar-graph-name {
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 8px 16px 4px;
+}
+
 .sidebar-instructions {
   padding: 12px 16px;
   font-size: 11px;
@@ -165,8 +180,11 @@ html, body, #root {
 }
 
 .sidebar-footer {
-  padding: 12px;
+  padding: 8px 12px 12px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sidebar-btn {
@@ -179,12 +197,28 @@ html, body, #root {
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
+  text-align: left;
 }
 
 .sidebar-btn:hover {
   background: #2a2a2a;
   color: #fff;
   border-color: #555;
+}
+
+.sidebar-btn-row {
+  display: flex;
+  gap: 4px;
+}
+
+.sidebar-btn-sm {
+  flex: 1;
+  text-align: center;
+}
+
+.sidebar-btn-danger:hover {
+  border-color: #e57373;
+  color: #e57373;
 }
 
 /* ==========================================
@@ -414,4 +448,194 @@ html, body, #root {
 
 .react-flow__minimap {
   border-radius: 8px !important;
+}
+
+/* ==========================================
+   MODAL DIALOG
+   ========================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.modal-dialog {
+  background: #161616;
+  border: 1px solid #333;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  color: #fff;
+  background: #2a2a2a;
+}
+
+.modal-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.modal-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.modal-input::placeholder {
+  color: #555;
+}
+
+.modal-error {
+  font-size: 12px;
+  color: #e57373;
+}
+
+.modal-btn {
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.modal-btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+
+.modal-btn-primary:hover {
+  background: #81d4fa;
+}
+
+.modal-btn-delete {
+  background: transparent;
+  color: #e57373;
+  border: 1px solid #e5737344;
+  padding: 4px 12px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.modal-btn-delete:hover {
+  background: #e5737311;
+  border-color: #e57373;
+}
+
+.modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.modal-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.modal-list-item:hover {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+.modal-list-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.modal-list-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-list-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.modal-empty {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
 }

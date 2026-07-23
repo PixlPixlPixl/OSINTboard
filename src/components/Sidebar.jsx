@@ -1,6 +1,6 @@
 import { NODE_TYPES } from '../data/nodeTypes';
 
-const Sidebar = () => {
+const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -10,7 +10,9 @@ const Sidebar = () => {
     <aside className="sidebar">
       <div className="sidebar-header">
         <h2>🕵️ OSINTboard</h2>
-        <p className="sidebar-subtitle">Node Palette</p>
+        <p className="sidebar-subtitle">
+          Graph: <span className="sidebar-graph-name">{graphName}</span>
+        </p>
       </div>
 
       <div className="sidebar-instructions">
@@ -21,6 +23,7 @@ const Sidebar = () => {
         <span className="key-hint">Scroll</span> to zoom · <span className="key-hint">Drag</span> canvas to pan
       </div>
 
+      <div className="sidebar-section-label">NODES</div>
       <div className="sidebar-nodes">
         {NODE_TYPES.map((nt) => (
           <div
@@ -40,16 +43,23 @@ const Sidebar = () => {
       </div>
 
       <div className="sidebar-footer">
-        <button
-          className="sidebar-btn"
-          onClick={() => {
-            if (window.confirm('Clear all nodes and edges from the canvas?')) {
-              window.dispatchEvent(new CustomEvent('clear-canvas'));
-            }
-          }}
-        >
-          🗑️ Clear Canvas
+        <div className="sidebar-section-label">GRAPH</div>
+
+        <button className="sidebar-btn" onClick={onSave}>
+          💾 Save
         </button>
+        <button className="sidebar-btn" onClick={onLoad}>
+          📂 Load
+        </button>
+
+        <div className="sidebar-btn-row">
+          <button className="sidebar-btn sidebar-btn-sm" onClick={onNew}>
+            ✨ New
+          </button>
+          <button className="sidebar-btn sidebar-btn-sm sidebar-btn-danger" onClick={onDelete}>
+            🗑️ Delete
+          </button>
+        </div>
       </div>
     </aside>
   );
