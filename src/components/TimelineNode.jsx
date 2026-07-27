@@ -120,7 +120,7 @@ const TimelineNode = memo(({ id, data, selected }) => {
     const placed = entries.filter((e) => e.date);
     const unplaced = entries.filter((e) => !e.date);
     placed.sort((a, b) => a.date.localeCompare(b.date));
-    return { placed, unplaced };
+    return { placed: placed.map((e, i) => ({ ...e, altIdx: i })), unplaced };
   }, [entries]);
 
   return (
@@ -153,12 +153,19 @@ const TimelineNode = memo(({ id, data, selected }) => {
       >
         <span className="timeline-node-icon">📊</span>
         {editing ? (
-          <span className="timeline-node-header-editing">
+          <span
+            className="timeline-node-header-editing"
+            tabIndex={-1}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget)) {
+                commitEdit();
+              }
+            }}
+          >
             <input
               className="timeline-node-input"
               value={localLabel}
               onChange={(e) => setLocalLabel(e.target.value)}
-              onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               placeholder="Timeline title…"
               autoFocus
@@ -170,7 +177,6 @@ const TimelineNode = memo(({ id, data, selected }) => {
                 type="date"
                 value={localStart}
                 onChange={(e) => setLocalStart(e.target.value)}
-                onBlur={commitEdit}
               />
             </label>
             <label className="timeline-node-date-label">
@@ -180,7 +186,6 @@ const TimelineNode = memo(({ id, data, selected }) => {
                 type="date"
                 value={localEnd}
                 onChange={(e) => setLocalEnd(e.target.value)}
-                onBlur={commitEdit}
               />
             </label>
           </span>
@@ -206,22 +211,21 @@ const TimelineNode = memo(({ id, data, selected }) => {
           <div className="timeline-node-bar-container">
             <div className="timeline-node-bar">
               <div className="timeline-node-bar-track" />
-              <span className="timeline-node-bar-start">
-                {formatDate(data.startDate)}
-              </span>
-              <span className="timeline-node-bar-end">
-                {formatDate(data.endDate)}
-              </span>
+              <div className="timeline-node-bar-endpoints">
+                <span>{formatDate(data.startDate)}</span>
+                <span>{formatDate(data.endDate)}</span>
+              </div>
               {sortedEntries.placed.map((entry) => {
                 const pct = getDatePosition(entry.date);
                 const def =
                   NODE_TYPE_MAP[entry.node?.data?.nodeType] ||
                   NODE_TYPE_MAP.note;
+                const side = entry.altIdx % 2 === 0 ? 'above' : 'below';
                 if (pct === null) return null;
                 return (
                   <div
                     key={entry.edgeId}
-                    className="timeline-node-entry"
+                    className={`timeline-node-entry timeline-node-entry--${side}`}
                     style={{ left: `${pct}%` }}
                     onClick={() => {
                       if (!entry.nodeDate) {
@@ -229,15 +233,22 @@ const TimelineNode = memo(({ id, data, selected }) => {
                         setLocalEntryDate(entry.edgeDate || '');
                       }
                     }}
-                    title={
-                      (entry.node?.data?.label || '(empty)') +
-                      (entry.date ? ' — ' + formatDate(entry.date) : '')
-                    }
+                    title={formatDate(entry.date)}
                   >
-                    <div
-                      className="timeline-node-entry-dot"
-                      style={{ background: def.color }}
-                    />
+                    <div className="timeline-node-entry-label-text">
+                      <span className="timeline-node-entry-name">
+                        {entry.node?.data?.label || '(empty)'}
+                      </span>
+                      <span className="timeline-node-entry-date-tag">
+                        {formatDate(entry.date)}
+                      </span>
+                    </div>
+                    <div className="timeline-node-entry-dot-row">
+                      <div
+                        className="timeline-node-entry-dot"
+                        style={{ background: def.color }}
+                      />
+                    </div>
                     <span className="timeline-node-entry-icon">
                       {def.icon}
                     </span>
@@ -276,7 +287,7 @@ const TimelineNode = memo(({ id, data, selected }) => {
         {sortedEntries.unplaced.length > 0 && (
           <div className="timeline-node-unplaced">
             <span className="timeline-node-unplaced-label">Unplaced entries</span>
-            <div className="timeline-node-unplaced-list">
+            <div className="timeline-node-unplaced-grid">
               {sortedEntries.unplaced.map((entry) => {
                 const def =
                   NODE_TYPE_MAP[entry.node?.data?.nodeType] ||
@@ -284,7 +295,7 @@ const TimelineNode = memo(({ id, data, selected }) => {
                 return (
                   <div
                     key={entry.edgeId}
-                    className="timeline-node-unplaced-item"
+                    className="timeline-node-unplaced-card"
                     onClick={() => {
                       setEditingEntry(entry.edgeId);
                       setLocalEntryDate(entry.edgeDate || '');
@@ -294,7 +305,7 @@ const TimelineNode = memo(({ id, data, selected }) => {
                     <span className="timeline-conn-label">
                       {entry.node?.data?.label || '(empty)'}
                     </span>
-                    <span className="timeline-node-unplaced-set">Set date</span>
+                    <span className="timeline-node-unplaced-date-btn">Set date</span>
                   </div>
                 );
               })}
