@@ -31,8 +31,10 @@ const OSINTNode = memo(({ data, selected }) => {
   const nodeDef = NODE_TYPE_MAP[data.nodeType] || NODE_TYPE_MAP.note;
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(data.label || '');
+  const [dateValue, setDateValue] = useState(data.dateValue || '');
 
   const color = nodeDef.color;
+  const isDate = data.nodeType === 'date';
   const isExternalLink = data.nodeType === 'external-link';
   const youtubeId = useMemo(() => extractYouTubeId(data.label), [data.label]);
 
@@ -40,19 +42,38 @@ const OSINTNode = memo(({ data, selected }) => {
     setEditing(true);
   };
 
-  const handleBlur = () => {
+  const commitEdit = () => {
     setEditing(false);
     data.label = label;
+    if (isDate) {
+      data.dateValue = dateValue;
+    }
   };
+
+  const handleBlur = commitEdit;
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      setEditing(false);
-      data.label = label;
+      commitEdit();
     }
     if (e.key === 'Escape') {
       setEditing(false);
       setLabel(data.label || '');
+      setDateValue(data.dateValue || '');
+    }
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return iso;
     }
   };
 
@@ -104,14 +125,29 @@ const OSINTNode = memo(({ data, selected }) => {
           </div>
         ) : editing ? (
           <div className="osint-node-edit-area">
+            {isDate && (
+              <input
+                className="osint-node-input"
+                type="date"
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                onBlur={commitEdit}
+                autoFocus
+              />
+            )}
             <input
               className="osint-node-input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              onBlur={handleBlur}
+              onBlur={commitEdit}
               onKeyDown={handleKeyDown}
-              autoFocus
-              placeholder={isExternalLink ? 'Paste a URL…' : 'Enter details…'}
+              placeholder={
+                isExternalLink
+                  ? 'Paste a URL…'
+                  : isDate
+                  ? 'Event description…'
+                  : 'Enter details…'
+              }
             />
             {isExternalLink && (
               <div className="osint-node-url-hint">
@@ -125,17 +161,24 @@ const OSINTNode = memo(({ data, selected }) => {
             onDoubleClick={handleDoubleClick}
             title={data.label}
           >
+            {isDate && formatDate(data.dateValue) && (
+              <div className="osint-node-date-display">
+                {formatDate(data.dateValue)}
+              </div>
+            )}
             {data.label ? (
               isExternalLink ? (
                 <span className="osint-node-url-display">
                   🔗 {data.label}
                 </span>
               ) : (
-                data.label
+                <div>{data.label}</div>
               )
             ) : (
               <span className="osint-node-placeholder">
-                {isExternalLink ? 'Double-click to add a URL' : 'Double-click to edit'}
+                {isExternalLink
+                  ? 'Double-click to add a URL'
+                  : 'Double-click to edit'}
               </span>
             )}
           </div>

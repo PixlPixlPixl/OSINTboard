@@ -639,3 +639,274 @@ html, body, #root {
   color: var(--text-muted);
   font-size: 13px;
 }
+
+/* ==========================================
+   TIMELINE NODE
+   ========================================== */
+
+.timeline-node {
+  background: #121212;
+  border: 1px solid #4db6ac;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  transition: all 0.15s ease;
+  overflow: visible;
+}
+
+.timeline-node--selected {
+  border-color: var(--accent);
+}
+
+.timeline-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+}
+
+.timeline-node-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.timeline-node-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4db6ac;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  min-width: 0;
+}
+
+.timeline-node-placeholder {
+  color: #555;
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.timeline-node-range {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.timeline-node-range-hint {
+  font-size: 10px;
+  color: #555;
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.timeline-node-header-editing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.timeline-node-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.timeline-node-input {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #fff;
+  outline: none;
+  font-family: inherit;
+}
+
+.timeline-node-input:focus {
+  border-color: #4db6ac;
+  box-shadow: 0 0 0 1px #4db6ac;
+}
+
+.timeline-node-input-sm {
+  width: auto;
+  flex: 1;
+}
+
+.timeline-node-bar-area {
+  padding: 10px 16px 12px;
+}
+
+.timeline-node-no-range {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.timeline-node-bar-container {
+  position: relative;
+}
+
+.timeline-node-bar {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.timeline-node-bar-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+.timeline-node-bar-start {
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transform: translateX(0);
+}
+
+.timeline-node-bar-end {
+  position: absolute;
+  right: 0;
+  bottom: -4px;
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transform: translateX(0);
+}
+
+.timeline-node-entry {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.timeline-node-entry-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #121212;
+  flex-shrink: 0;
+}
+
+.timeline-node-entry-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.timeline-node-entry-editor {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.timeline-node-entry-editor .timeline-node-input {
+  width: 180px;
+}
+
+.timeline-node-unplaced {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.timeline-node-unplaced-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.timeline-node-unplaced-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timeline-node-unplaced-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.timeline-node-unplaced-item:hover {
+  background: #222;
+}
+
+.timeline-conn-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.timeline-conn-label {
+  flex: 1;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.timeline-node-unplaced-set {
+  font-size: 9px;
+  color: #4db6ac;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeline-node-empty {
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* ==========================================
+   DATE NODE DISPLAY
+   ========================================== */
+
+.osint-node-date-display {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f06292;
+  margin-bottom: 4px;
+}

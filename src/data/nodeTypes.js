@@ -90,6 +90,13 @@ export const NODE_TYPES = [
     color: '#b0bec5',
     description: 'Document reference',
   },
+  {
+    type: 'timeline',
+    label: 'Timeline',
+    icon: '📊',
+    color: '#4db6ac',
+    description: 'Chronological timeline with date entries',
+  },
 ];
 
 export const NODE_TYPE_MAP = Object.fromEntries(

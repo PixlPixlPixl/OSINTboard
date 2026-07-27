@@ -13,10 +13,12 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import OSINTNode from './OSINTNode';
+import TimelineNode from './TimelineNode';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
   osintNode: OSINTNode,
+  timelineNode: TimelineNode,
 };
 
 let nodeId = 0;
@@ -75,7 +77,6 @@ const Canvas = forwardRef(function Canvas(props, ref) {
       return { nodes, edges };
     },
     loadSnapshot(newNodes, newEdges) {
-      // Reset node ID counter to avoid collisions with loaded IDs
       const maxId = newNodes.reduce((m, n) => {
         const num = parseInt(n.id.replace('osint_', ''), 10);
         return isNaN(num) ? m : Math.max(m, num);
@@ -96,9 +97,18 @@ const Canvas = forwardRef(function Canvas(props, ref) {
         type: 'smoothstep',
         animated: false,
       };
+
+      const targetNode = nodes.find((n) => n.id === params.target);
+      if (targetNode?.data?.nodeType === 'timeline') {
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        if (sourceNode?.data?.dateValue) {
+          newEdge.data = { timelineDate: sourceNode.data.dateValue };
+        }
+      }
+
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, nodes]
   );
 
   const onDragOver = useCallback((event) => {
@@ -120,9 +130,10 @@ const Canvas = forwardRef(function Canvas(props, ref) {
       const snappedX = Math.round(position.x / SNAP_GRID) * SNAP_GRID;
       const snappedY = Math.round(position.y / SNAP_GRID) * SNAP_GRID;
 
+      const isTimeline = type === 'timeline';
       const newNode = {
         id: getId(),
-        type: 'osintNode',
+        type: isTimeline ? 'timelineNode' : 'osintNode',
         position: { x: snappedX, y: snappedY },
         data: { nodeType: type, label: '' },
       };
