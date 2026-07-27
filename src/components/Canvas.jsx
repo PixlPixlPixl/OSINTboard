@@ -63,11 +63,16 @@ const INITIAL_EDGES = [
   },
 ];
 
-const Canvas = forwardRef(function Canvas(props, ref) {
+const Canvas = forwardRef(function Canvas({ onGraphChange }, ref) {
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+
+  // Report graph state changes to parent (for Timeline, etc.)
+  useEffect(() => {
+    onGraphChange?.({ nodes, edges });
+  }, [nodes, edges, onGraphChange]);
 
   // Expose save/load to parent
   useImperativeHandle(ref, () => ({
