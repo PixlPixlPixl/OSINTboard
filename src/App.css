@@ -101,6 +101,21 @@ html, body, #root {
   padding: 8px 16px 4px;
 }
 
+.sidebar-section-label--export {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sidebar-import-error {
+  margin: 4px 16px 0;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: #f06292;
+  background: #2a1a1a;
+  border-radius: 4px;
+}
+
 .sidebar-instructions {
   padding: 12px 16px;
   font-size: 11px;
@@ -998,4 +1013,246 @@ html, body, #root {
   font-weight: 600;
   color: #f06292;
   margin-bottom: 4px;
+}
+
+/* ==========================================
+   MEDIA ATTACHMENTS (shared)
+   ========================================== */
+
+.media-attachments {
+  padding: 6px 0 0;
+}
+
+.media-attachments-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.media-attachment-item {
+  position: relative;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 140px;
+}
+
+.media-attachment-preview {
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  cursor: pointer;
+}
+
+.media-attachment-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-attachment-audio {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.media-attachment-audio audio {
+  width: 120px;
+  height: 32px;
+}
+
+.media-attachment-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.media-attachment-item:hover .media-attachment-remove {
+  opacity: 1;
+}
+
+.media-attachment-name {
+  display: block;
+  padding: 3px 6px;
+  font-size: 9px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.media-attachments-error {
+  font-size: 10px;
+  color: #f06292;
+  margin-bottom: 4px;
+  padding: 4px 6px;
+  background: #2a1a1a;
+  border-radius: 4px;
+}
+
+.media-attachments-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #1a1a1a;
+  border: 1px dashed #444;
+  border-radius: 4px;
+  color: #999;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.media-attachments-add-btn:hover {
+  border-color: #ba68c888;
+  color: #ddd;
+  background: #222;
+}
+
+.media-attachments-hidden-input {
+  display: none;
+}
+
+/* ==========================================
+   MEDIA NODE (standalone gallery)
+   ========================================== */
+
+.media-node {
+  background: #121212;
+  border: 1px solid #ba68c8;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  transition: all 0.15s ease;
+  overflow: visible;
+}
+
+.media-node--selected {
+  border-color: var(--accent);
+}
+
+.media-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+}
+
+.media-node-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ba68c8;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  min-width: 0;
+}
+
+.media-node-count {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.media-node-body {
+  padding: 8px 12px 10px;
+}
+
+.media-node-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.media-node-gallery-item {
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+
+.media-node-gallery-img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.media-node-gallery-img:hover {
+  transform: scale(1.05);
+}
+
+.media-node-gallery-video {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  display: block;
+}
+
+.media-node-gallery-audio {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.media-node-gallery-audio audio {
+  width: 100%;
+  height: 32px;
+}
+
+.media-node-gallery-name {
+  font-size: 9px;
+  color: #999;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.media-node-empty {
+  text-align: center;
+  font-size: 11px;
+  color: #555;
+  font-style: italic;
+  padding: 24px 0;
+}
+
+.media-node-attach-row {
+  border-top: 1px solid #2a2a2a;
+  padding-top: 6px;
 }

@@ -1,6 +1,7 @@
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
+import MediaAttachments from './MediaAttachments';
 
 /**
  * Extract a YouTube video ID from various URL formats:
@@ -32,6 +33,19 @@ const OSINTNode = memo(({ data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(data.label || '');
   const [dateValue, setDateValue] = useState(data.dateValue || '');
+  const media = data.media || [];
+
+  const handleAddMedia = useCallback((item) => {
+    if (!data.media) data.media = [];
+    data.media.push(item);
+    setLabel((prev) => prev); // force re-render
+  }, [data]);
+
+  const handleRemoveMedia = useCallback((mediaId) => {
+    if (!data.media) return;
+    data.media = data.media.filter((m) => m.id !== mediaId);
+    setLabel((prev) => prev); // force re-render
+  }, [data]);
 
   const color = nodeDef.color;
   const isDate = data.nodeType === 'date';
@@ -183,6 +197,11 @@ const OSINTNode = memo(({ data, selected }) => {
             )}
           </div>
         )}
+        <MediaAttachments
+          media={media}
+          onAdd={handleAddMedia}
+          onRemove={handleRemoveMedia}
+        />
       </div>
       <Handle
         type="source"

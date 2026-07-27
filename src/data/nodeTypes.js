@@ -97,6 +97,13 @@ export const NODE_TYPES = [
     color: '#4db6ac',
     description: 'Chronological timeline with date entries',
   },
+  {
+    type: 'media',
+    label: 'Media',
+    icon: '🖼️',
+    color: '#ba68c8',
+    description: 'Photo, video, and audio gallery',
+  },
 ];
 
 export const NODE_TYPE_MAP = Object.fromEntries(
