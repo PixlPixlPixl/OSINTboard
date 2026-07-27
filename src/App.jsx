@@ -3,15 +3,12 @@ import { ReactFlowProvider } from 'reactflow';
 import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
 import GraphModal from './components/GraphModal';
-import Timeline from './components/Timeline';
 import { saveGraph, loadGraph } from './data/graphStore';
 import './App.css';
 
 function App() {
   const [modalMode, setModalMode] = useState(null);
   const [graphName, setGraphName] = useState('Untitled');
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [graphSnapshot, setGraphSnapshot] = useState({ nodes: [], edges: [] });
   const canvasRef = useRef(null);
 
   const openModal = useCallback((mode) => {
@@ -45,14 +42,6 @@ function App() {
     setGraphName('Untitled');
   }, []);
 
-  const handleGraphChange = useCallback((snapshot) => {
-    setGraphSnapshot(snapshot);
-  }, []);
-
-  const toggleTimeline = useCallback(() => {
-    setShowTimeline((prev) => !prev);
-  }, []);
-
   return (
     <ReactFlowProvider>
       <div className="app">
@@ -62,17 +51,8 @@ function App() {
           onLoad={() => openModal('load')}
           onNew={handleNew}
           onDelete={() => openModal('delete')}
-          onToggleTimeline={toggleTimeline}
-          timelineActive={showTimeline}
         />
-        <Canvas ref={canvasRef} onGraphChange={handleGraphChange} />
-        {showTimeline && (
-          <Timeline
-            nodes={graphSnapshot.nodes}
-            edges={graphSnapshot.edges}
-            onClose={() => setShowTimeline(false)}
-          />
-        )}
+        <Canvas ref={canvasRef} />
       </div>
       {modalMode && (
         <GraphModal

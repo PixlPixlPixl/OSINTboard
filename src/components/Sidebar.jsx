@@ -1,6 +1,6 @@
 import { NODE_TYPES } from '../data/nodeTypes';
 
-const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete, onToggleTimeline, timelineActive }) => {
+const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -43,15 +43,6 @@ const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete, onToggleTimeline,
       </div>
 
       <div className="sidebar-footer">
-        <div className="sidebar-section-label">VIEW</div>
-
-        <button
-          className={`sidebar-btn ${timelineActive ? 'sidebar-btn-active' : ''}`}
-          onClick={onToggleTimeline}
-        >
-          📅 {timelineActive ? 'Graph View' : 'Timeline View'}
-        </button>
-
         <div className="sidebar-section-label">GRAPH</div>
 
         <button className="sidebar-btn" onClick={onSave}>

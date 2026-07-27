@@ -13,10 +13,12 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 import OSINTNode from './OSINTNode';
+import TimelineNode from './TimelineNode';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
   osintNode: OSINTNode,
+  timelineNode: TimelineNode,
 };
 
 let nodeId = 0;
@@ -63,16 +65,11 @@ const INITIAL_EDGES = [
   },
 ];
 
-const Canvas = forwardRef(function Canvas({ onGraphChange }, ref) {
+const Canvas = forwardRef(function Canvas(props, ref) {
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-
-  // Report graph state changes to parent (for Timeline, etc.)
-  useEffect(() => {
-    onGraphChange?.({ nodes, edges });
-  }, [nodes, edges, onGraphChange]);
 
   // Expose save/load to parent
   useImperativeHandle(ref, () => ({
@@ -80,7 +77,6 @@ const Canvas = forwardRef(function Canvas({ onGraphChange }, ref) {
       return { nodes, edges };
     },
     loadSnapshot(newNodes, newEdges) {
-      // Reset node ID counter to avoid collisions with loaded IDs
       const maxId = newNodes.reduce((m, n) => {
         const num = parseInt(n.id.replace('osint_', ''), 10);
         return isNaN(num) ? m : Math.max(m, num);
@@ -101,9 +97,18 @@ const Canvas = forwardRef(function Canvas({ onGraphChange }, ref) {
         type: 'smoothstep',
         animated: false,
       };
+
+      const targetNode = nodes.find((n) => n.id === params.target);
+      if (targetNode?.data?.nodeType === 'timeline') {
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        if (sourceNode?.data?.dateValue) {
+          newEdge.data = { timelineDate: sourceNode.data.dateValue };
+        }
+      }
+
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, nodes]
   );
 
   const onDragOver = useCallback((event) => {
@@ -125,9 +130,10 @@ const Canvas = forwardRef(function Canvas({ onGraphChange }, ref) {
       const snappedX = Math.round(position.x / SNAP_GRID) * SNAP_GRID;
       const snappedY = Math.round(position.y / SNAP_GRID) * SNAP_GRID;
 
+      const isTimeline = type === 'timeline';
       const newNode = {
         id: getId(),
-        type: 'osintNode',
+        type: isTimeline ? 'timelineNode' : 'osintNode',
         position: { x: snappedX, y: snappedY },
         data: { nodeType: type, label: '' },
       };
