@@ -14,11 +14,13 @@ import 'reactflow/dist/style.css';
 
 import OSINTNode from './OSINTNode';
 import TimelineNode from './TimelineNode';
+import MediaNode from './MediaNode';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
   osintNode: OSINTNode,
   timelineNode: TimelineNode,
+  mediaNode: MediaNode,
 };
 
 let nodeId = 0;
@@ -131,9 +133,15 @@ const Canvas = forwardRef(function Canvas(props, ref) {
       const snappedY = Math.round(position.y / SNAP_GRID) * SNAP_GRID;
 
       const isTimeline = type === 'timeline';
+      const isMedia = type === 'media';
+      const reactFlowType = isTimeline
+        ? 'timelineNode'
+        : isMedia
+        ? 'mediaNode'
+        : 'osintNode';
       const newNode = {
         id: getId(),
-        type: isTimeline ? 'timelineNode' : 'osintNode',
+        type: reactFlowType,
         position: { x: snappedX, y: snappedY },
         data: { nodeType: type, label: '' },
       };

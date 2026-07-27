@@ -1,6 +1,6 @@
 import { NODE_TYPES } from '../data/nodeTypes';
 
-const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete }) => {
+const Sidebar = ({ graphName, importError, onSave, onLoad, onNew, onDelete, onExport, onImport }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.effectAllowed = 'move';
@@ -60,6 +60,17 @@ const Sidebar = ({ graphName, onSave, onLoad, onNew, onDelete }) => {
             🗑️ Delete
           </button>
         </div>
+
+        <div className="sidebar-section-label sidebar-section-label--export">EXPORT / IMPORT</div>
+        <button className="sidebar-btn" onClick={onExport}>
+          📥 Export to file
+        </button>
+        <button className="sidebar-btn" onClick={onImport}>
+          📤 Import from file
+        </button>
+        {importError && (
+          <div className="sidebar-import-error">{importError}</div>
+        )}
       </div>
     </aside>
   );
