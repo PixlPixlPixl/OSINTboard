@@ -7,7 +7,7 @@ import { saveGraph, loadGraph } from './data/graphStore';
 import './App.css';
 
 function App() {
-  const [modalMode, setModalMode] = useState(null); // null | 'save' | 'load' | 'delete'
+  const [modalMode, setModalMode] = useState(null);
   const [graphName, setGraphName] = useState('Untitled');
   const canvasRef = useRef(null);
 
