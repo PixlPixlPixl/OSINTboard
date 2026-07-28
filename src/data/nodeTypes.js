@@ -28,6 +28,13 @@ export const NODE_TYPES = [
     description: 'Physical address',
   },
   {
+    type: 'place',
+    label: 'Place',
+    icon: '🌍',
+    color: '#64b5f6',
+    description: 'Location, venue, or landmark',
+  },
+  {
     type: 'social',
     label: 'Social Media',
     icon: '📱',
