@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'osintboard_graphs';
+const LAST_OPEN_KEY = 'osintboard_last_open';
 
 let idCounter = Date.now();
 const uid = () => `graph_${++idCounter}`;
@@ -18,15 +19,20 @@ export function saveGraph(name, nodes, edges) {
   const now = new Date().toISOString();
   const existing = graphs.find((g) => g.name === name);
 
+  let graph;
   if (existing) {
     existing.nodes = nodes;
     existing.edges = edges;
     existing.savedAt = now;
+    graph = existing;
   } else {
-    graphs.push({ id: uid(), name, nodes, edges, savedAt: now });
+    graph = { id: uid(), name, nodes, edges, savedAt: now };
+    graphs.push(graph);
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(graphs));
+  setLastOpenGraphId(graph.id);
+  return graph;
 }
 
 export function loadGraph(id) {
@@ -38,6 +44,10 @@ export function loadGraph(id) {
 export function deleteGraph(id) {
   const graphs = loadAll().filter((g) => g.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(graphs));
+  // Clear last-open if it was the deleted graph
+  if (getLastOpenGraphId() === id) {
+    clearLastOpenGraph();
+  }
 }
 
 export function duplicateGraph(id, newName) {
@@ -54,6 +64,38 @@ export function duplicateGraph(id, newName) {
   graphs.push(copy);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(graphs));
   return copy;
+}
+
+// --- Last-opened graph tracking ---
+
+export function getLastOpenGraphId() {
+  try {
+    return localStorage.getItem(LAST_OPEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setLastOpenGraphId(id) {
+  try {
+    localStorage.setItem(LAST_OPEN_KEY, id);
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
+export function clearLastOpenGraph() {
+  try {
+    localStorage.removeItem(LAST_OPEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function getLastOpenGraph() {
+  const id = getLastOpenGraphId();
+  if (!id) return null;
+  return loadGraph(id);
 }
 
 function loadAll() {

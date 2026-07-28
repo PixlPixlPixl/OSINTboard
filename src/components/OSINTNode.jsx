@@ -1,25 +1,18 @@
-import { memo, useState, useMemo, useCallback } from 'react';
-import { Handle, Position } from 'reactflow';
+import { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { Handle, Position, useReactFlow } from 'reactflow';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 import MediaAttachments from './MediaAttachments';
 
 /**
- * Extract a YouTube video ID from various URL formats:
- *   youtube.com/watch?v=ID
- *   youtu.be/ID
- *   youtube.com/embed/ID
- *   youtube.com/shorts/ID
- *   youtube.com/live/ID
+ * Extract a YouTube video ID from various URL formats.
  */
 function extractYouTubeId(url) {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
 
-  // youtu.be/ID
   const shortMatch = trimmed.match(/^https?:\/\/(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[?&#]|$)/);
   if (shortMatch) return shortMatch[1];
 
-  // youtube.com/* (watch, embed, shorts, live)
   const longMatch = trimmed.match(
     /^https?:\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtube\.com)\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)([a-zA-Z0-9_-]{11})/
   );
@@ -28,23 +21,67 @@ function extractYouTubeId(url) {
   return null;
 }
 
-const OSINTNode = memo(({ data, selected }) => {
+const OSINTNode = memo(({ id, data, selected }) => {
   const nodeDef = NODE_TYPE_MAP[data.nodeType] || NODE_TYPE_MAP.note;
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(data.label || '');
   const [dateValue, setDateValue] = useState(data.dateValue || '');
   const media = data.media || [];
+  const { deleteElements } = useReactFlow();
+  const nodeRef = useRef(null);
+
+  // Dismiss editing when clicking outside the node
+  useEffect(() => {
+    if (!editing) return;
+    const handler = (e) => {
+      if (nodeRef.current && !nodeRef.current.contains(e.target)) {
+        commitEditRef.current();
+      }
+    };
+    // Delay to avoid catching the double-click that opened edit mode
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handler);
+      document.addEventListener('touchstart', handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [editing]);
+
+  // Ref to hold latest label/dateValue for the outside-click handler
+  const labelRef = useRef(label);
+  const dateRef = useRef(dateValue);
+  labelRef.current = label;
+  dateRef.current = dateValue;
+
+  const commitEditRef = useRef(() => {
+    data.label = labelRef.current;
+    if (data.nodeType === 'date') {
+      data.dateValue = dateRef.current;
+    }
+    setEditing(false);
+  });
+
+  const handleDelete = useCallback(
+    (e) => {
+      e.stopPropagation();
+      deleteElements({ nodes: [{ id }] });
+    },
+    [id, deleteElements]
+  );
 
   const handleAddMedia = useCallback((item) => {
     if (!data.media) data.media = [];
     data.media.push(item);
-    setLabel((prev) => prev); // force re-render
+    setLabel((prev) => prev);
   }, [data]);
 
   const handleRemoveMedia = useCallback((mediaId) => {
     if (!data.media) return;
     data.media = data.media.filter((m) => m.id !== mediaId);
-    setLabel((prev) => prev); // force re-render
+    setLabel((prev) => prev);
   }, [data]);
 
   const color = nodeDef.color;
@@ -52,19 +89,20 @@ const OSINTNode = memo(({ data, selected }) => {
   const isExternalLink = data.nodeType === 'external-link';
   const youtubeId = useMemo(() => extractYouTubeId(data.label), [data.label]);
 
-  const handleDoubleClick = () => {
+  const handleDoubleClick = (e) => {
+    e.stopPropagation();
+    setLabel(data.label || '');
+    setDateValue(data.dateValue || '');
     setEditing(true);
   };
 
   const commitEdit = () => {
-    setEditing(false);
     data.label = label;
     if (isDate) {
       data.dateValue = dateValue;
     }
+    setEditing(false);
   };
-
-  const handleBlur = commitEdit;
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -93,6 +131,7 @@ const OSINTNode = memo(({ data, selected }) => {
 
   return (
     <div
+      ref={nodeRef}
       className={`osint-node ${selected ? 'selected' : ''} ${isExternalLink ? 'osint-node--external-link' : ''} ${youtubeId ? 'osint-node--has-video' : ''}`}
       onDoubleClick={!youtubeId || editing ? handleDoubleClick : undefined}
       style={{
@@ -120,6 +159,15 @@ const OSINTNode = memo(({ data, selected }) => {
         <span className="osint-node-type-label" style={{ color }}>
           {nodeDef.label}
         </span>
+        {editing && (
+          <button
+            className="node-delete-btn"
+            onClick={handleDelete}
+            title="Delete node"
+          >
+            🗑️
+          </button>
+        )}
       </div>
       <div className="osint-node-body">
         {isExternalLink && youtubeId && !editing ? (
@@ -145,7 +193,6 @@ const OSINTNode = memo(({ data, selected }) => {
                 type="date"
                 value={dateValue}
                 onChange={(e) => setDateValue(e.target.value)}
-                onBlur={commitEdit}
                 autoFocus
               />
             )}
@@ -153,7 +200,6 @@ const OSINTNode = memo(({ data, selected }) => {
               className="osint-node-input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               placeholder={
                 isExternalLink
@@ -162,12 +208,18 @@ const OSINTNode = memo(({ data, selected }) => {
                   ? 'Event description…'
                   : 'Enter details…'
               }
+              autoFocus={!isDate}
             />
             {isExternalLink && (
               <div className="osint-node-url-hint">
                 YouTube links auto-embed a player ↗
               </div>
             )}
+            <MediaAttachments
+              media={media}
+              onAdd={handleAddMedia}
+              onRemove={handleRemoveMedia}
+            />
           </div>
         ) : (
           <div
@@ -197,11 +249,6 @@ const OSINTNode = memo(({ data, selected }) => {
             )}
           </div>
         )}
-        <MediaAttachments
-          media={media}
-          onAdd={handleAddMedia}
-          onRemove={handleRemoveMedia}
-        />
       </div>
       <Handle
         type="source"

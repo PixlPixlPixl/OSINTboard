@@ -31,7 +31,7 @@ export default function GraphModal({ mode, onClose, onSave, onLoad }) {
   const handleLoad = (id) => {
     const g = loadGraph(id);
     if (g) {
-      onLoad(g.nodes, g.edges, g.name);
+      onLoad(g.nodes, g.edges, g.name, g.id);
     }
     onClose();
   };

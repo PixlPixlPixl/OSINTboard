@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, useCallback } from 'react';
+import { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, useEdges, useNodes, useReactFlow } from 'reactflow';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
@@ -34,9 +34,51 @@ const TimelineNode = memo(({ id, data, selected }) => {
 
   const edges = useEdges();
   const nodes = useNodes();
-  const { setEdges, getEdges } = useReactFlow();
+  const { setEdges, getEdges, deleteElements } = useReactFlow();
+  const nodeRef = useRef(null);
 
   const color = '#4db6ac';
+
+  // Dismiss editing when clicking outside the node
+  useEffect(() => {
+    if (!editing) return;
+    const handler = (e) => {
+      if (nodeRef.current && !nodeRef.current.contains(e.target)) {
+        commitEditExternal();
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handler);
+      document.addEventListener('touchstart', handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [editing, commitEditExternal]);
+
+  const localLabelRef = useRef(localLabel);
+  const localStartRef = useRef(localStart);
+  const localEndRef = useRef(localEnd);
+  localLabelRef.current = localLabel;
+  localStartRef.current = localStart;
+  localEndRef.current = localEnd;
+
+  const commitEditExternal = useCallback(() => {
+    data.label = localLabelRef.current;
+    data.startDate = localStartRef.current;
+    data.endDate = localEndRef.current;
+    setEditing(false);
+  }, [data]);
+
+  const handleDelete = useCallback(
+    (e) => {
+      e.stopPropagation();
+      deleteElements({ nodes: [{ id }] });
+    },
+    [id, deleteElements]
+  );
 
   const connectedEdges = useMemo(
     () => edges.filter((e) => e.target === id || e.source === id),
@@ -125,6 +167,7 @@ const TimelineNode = memo(({ id, data, selected }) => {
 
   return (
     <div
+      ref={nodeRef}
       className={`timeline-node ${selected ? 'timeline-node--selected' : ''}`}
       style={{
         width: TIMELINE_WIDTH,
@@ -203,6 +246,15 @@ const TimelineNode = memo(({ id, data, selected }) => {
               </span>
             )}
           </span>
+        )}
+        {editing && (
+          <button
+            className="node-delete-btn"
+            onClick={handleDelete}
+            title="Delete timeline"
+          >
+            🗑️
+          </button>
         )}
       </div>
 

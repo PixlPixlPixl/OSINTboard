@@ -194,6 +194,47 @@ html, body, #root {
   text-overflow: ellipsis;
 }
 
+.sidebar-node--selected {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Mobile: pending placement banner */
+.sidebar-pending-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 16px 8px;
+  padding: 6px 10px;
+  background: #1a2a2a;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  gap: 8px;
+}
+
+.sidebar-pending-banner strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar-pending-cancel {
+  background: none;
+  border: none;
+  color: #e57373;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.sidebar-pending-cancel:hover {
+  background: #2a1a1a;
+}
+
 .sidebar-footer {
   padding: 8px 12px 12px;
   border-top: 1px solid var(--border-color);
@@ -244,6 +285,202 @@ html, body, #root {
   flex: 1;
   height: 100%;
   background: var(--bg-primary);
+  position: relative;
+}
+
+/* Mobile: placement hint banner */
+.canvas-placement-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #1a2a2a;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.canvas-placement-hint strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.canvas-placement-cancel {
+  background: none;
+  border: 1px solid #e5737344;
+  color: #e57373;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.canvas-placement-cancel:hover {
+  background: #e5737311;
+  border-color: #e57373;
+}
+
+/* ==========================================
+   NODE DELETE BUTTON
+   ========================================== */
+
+.node-delete-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 5px;
+  line-height: 1;
+  opacity: 0.4;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.node-delete-btn:hover {
+  opacity: 1;
+  background: #2a1a1a;
+  border-color: #e5737344;
+}
+
+/* ==========================================
+   UNDO / REDO TOOLBAR
+   ========================================== */
+
+.undo-redo-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.undo-redo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.undo-redo-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #555;
+}
+
+.undo-redo-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   QUICK SEARCH (right-click / long-press)
+   ========================================== */
+
+.quick-search {
+  position: fixed;
+  z-index: 300;
+  width: 240px;
+  max-height: 320px;
+  background: #161616;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.quick-search-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: none;
+  border-bottom: 1px solid #2a2a2a;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.quick-search-input::placeholder {
+  color: #555;
+}
+
+.quick-search-results {
+  overflow-y: auto;
+  max-height: 240px;
+}
+
+.quick-search-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.quick-search-item:hover,
+.quick-search-item:focus {
+  background: #222;
+}
+
+.quick-search-item-icon {
+  font-size: 15px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.quick-search-item-label {
+  font-size: 13px;
+  color: #ddd;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.quick-search-item-desc {
+  font-size: 10px;
+  color: #666;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-search-empty {
+  padding: 16px;
+  text-align: center;
+  color: #555;
+  font-size: 12px;
 }
 
 /* Override React Flow default styles */
@@ -1255,4 +1492,367 @@ html, body, #root {
 .media-node-attach-row {
   border-top: 1px solid #2a2a2a;
   padding-top: 6px;
+}
+
+/* ==========================================
+   MOBILE: HEADER BAR
+   ========================================== */
+
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 8px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.mobile-header__hamburger {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.mobile-header__hamburger:hover {
+  background: var(--bg-tertiary);
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 1px;
+  transition: all 0.2s ease;
+}
+
+.mobile-header__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: center;
+  margin: 0 8px;
+}
+
+.mobile-header__action {
+  background: none;
+  border: none;
+  font-size: 20px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  line-height: 1;
+}
+
+.mobile-header__action:hover {
+  background: var(--bg-tertiary);
+}
+
+/* ==========================================
+   MOBILE: SIDEBAR OVERLAY
+   ========================================== */
+
+.sidebar-overlay {
+  display: none;
+}
+
+.sidebar-close-btn {
+  display: none;
+}
+
+/* ==========================================
+   RESPONSIVE BREAKPOINT: ≤ 768px
+   ========================================== */
+
+@media (max-width: 768px) {
+  /* Layout: stack vertically */
+  .app.app--mobile {
+    flex-direction: column;
+  }
+
+  /* Show mobile header */
+  .mobile-header {
+    display: flex;
+  }
+
+  /* Sidebar becomes off-canvas overlay */
+  .sidebar.sidebar--mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    width: 280px;
+    max-width: 85vw;
+    min-width: unset;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebar--mobile.sidebar--open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.15s ease;
+  }
+
+  .sidebar-close-btn:hover {
+    color: #fff;
+    background: #2a2a2a;
+  }
+
+  /* Mobile-friendly instructions */
+  .sidebar-instructions--mobile {
+    display: block !important;
+  }
+
+  /* Canvas fills remaining space below header */
+  .canvas-wrapper {
+    flex: 1;
+    height: auto;
+  }
+
+  /* Push undo/redo toolbar down below mobile header */
+  .undo-redo-toolbar {
+    top: 8px;
+    left: 8px;
+  }
+
+  .undo-redo-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  /* Bigger delete buttons for touch */
+  .node-delete-btn {
+    font-size: 15px;
+    padding: 4px 8px;
+    opacity: 0.5;
+  }
+
+  /* Bigger touch targets for sidebar nodes */
+  .sidebar-node {
+    padding: 12px 10px;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .sidebar-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .sidebar-btn-row {
+    gap: 6px;
+  }
+
+  .sidebar-btn-sm {
+    padding: 10px 8px;
+  }
+
+  /* ======================================
+     MOBILE: RESPONSIVE NODE WIDTHS
+     ====================================== */
+
+  /* OSINT nodes — slightly wider for touch */
+  .osint-node {
+    min-width: 140px;
+    max-width: min(240px, calc(100vw - 48px));
+  }
+
+  /* External link / video nodes */
+  .osint-node--external-link {
+    min-width: 200px;
+    max-width: min(400px, calc(100vw - 48px));
+  }
+
+  .osint-node--has-video {
+    min-width: 260px;
+    max-width: min(420px, calc(100vw - 48px));
+  }
+
+  /* Timeline node — responsive width */
+  .timeline-node {
+    width: min(520px, calc(100vw - 32px)) !important;
+  }
+
+  .timeline-node entry-name {
+    max-width: 70px;
+  }
+
+  /* Media node — responsive width */
+  .media-node {
+    width: min(360px, calc(100vw - 32px)) !important;
+  }
+
+  /* ======================================
+     MOBILE: MODALS — FULLSCREEN
+     ====================================== */
+
+  .modal-dialog {
+    width: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+  }
+
+  .modal-body {
+    padding: 12px 16px 16px;
+    flex: 1;
+  }
+
+  .modal-input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+    padding: 10px 12px;
+  }
+
+  .modal-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .modal-list-item {
+    padding: 12px;
+  }
+
+  .modal-btn-delete {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  /* ======================================
+     MOBILE: EDGE HANDLES — BIGGER TOUCH
+     ====================================== */
+
+  .react-flow__handle {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* ======================================
+     MOBILE: CONTROLS — SCALED UP
+     ====================================== */
+
+  .react-flow__controls-button {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* ======================================
+     MOBILE: TIMELINE — COMPACT
+     ====================================== */
+
+  .timeline-node-bar {
+    height: 60px;
+  }
+
+  .timeline-node-entry-label-text {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .timeline-node-entry-name {
+    font-size: 9px;
+    max-width: 60px;
+  }
+
+  .timeline-node-entry-dot {
+    width: 11px;
+    height: 11px;
+  }
+
+  .timeline-node-unplaced-grid {
+    gap: 4px;
+  }
+
+  .timeline-node-unplaced-card {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+}
+
+/* ==========================================
+   MEDIUM SCREENS: 769px – 1024px
+   ========================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+  }
+
+  .osint-node--external-link {
+    min-width: 240px;
+    max-width: 340px;
+  }
+
+  .osint-node--has-video {
+    min-width: 280px;
+    max-width: 380px;
+  }
 }

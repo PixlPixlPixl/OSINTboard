@@ -1,13 +1,50 @@
-import { memo, useState, useCallback } from 'react';
-import { Handle, Position } from 'reactflow';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { Handle, Position, useReactFlow } from 'reactflow';
 import MediaAttachments from './MediaAttachments';
 
 const MediaNode = memo(({ id, data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [localLabel, setLocalLabel] = useState(data.label || '');
   const media = data.media || [];
+  const { deleteElements } = useReactFlow();
+  const nodeRef = useRef(null);
 
   const color = '#ba68c8';
+
+  // Dismiss editing when clicking outside the node
+  useEffect(() => {
+    if (!editing) return;
+    const handler = (e) => {
+      if (nodeRef.current && !nodeRef.current.contains(e.target)) {
+        commitEditExternal();
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handler);
+      document.addEventListener('touchstart', handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [editing, commitEditExternal]);
+
+  const localLabelRef = useRef(localLabel);
+  localLabelRef.current = localLabel;
+
+  const commitEditExternal = useCallback(() => {
+    data.label = localLabelRef.current;
+    setEditing(false);
+  }, [data]);
+
+  const handleDelete = useCallback(
+    (e) => {
+      e.stopPropagation();
+      deleteElements({ nodes: [{ id }] });
+    },
+    [id, deleteElements]
+  );
 
   const commitEdit = () => {
     setEditing(false);
@@ -38,6 +75,7 @@ const MediaNode = memo(({ id, data, selected }) => {
 
   return (
     <div
+      ref={nodeRef}
       className={`media-node ${selected ? 'media-node--selected' : ''}`}
       style={{
         width: 360,
@@ -96,6 +134,15 @@ const MediaNode = memo(({ id, data, selected }) => {
               </span>
             )}
           </span>
+        )}
+        {editing && (
+          <button
+            className="node-delete-btn"
+            onClick={handleDelete}
+            title="Delete media gallery"
+          >
+            🗑️
+          </button>
         )}
       </div>
 
