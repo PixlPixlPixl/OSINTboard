@@ -146,13 +146,7 @@ const MediaNode = memo(({ id, data, selected }) => {
                 Drop photos, videos, or audio recordings here
               </div>
             )}
-            <div className="media-node-attach-row">
-              <MediaAttachments
-                media={[]}
-                onAdd={handleAddMedia}
-                onRemove={handleRemoveMedia}
-              />
-            </div>
+
           </>
         )}
       </div>
