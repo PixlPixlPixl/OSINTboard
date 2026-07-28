@@ -39,6 +39,21 @@ const TimelineNode = memo(({ id, data, selected }) => {
 
   const color = '#4db6ac';
 
+  // Refs for latest local state (used by click-outside handler)
+  const localLabelRef = useRef(localLabel);
+  const localStartRef = useRef(localStart);
+  const localEndRef = useRef(localEnd);
+  localLabelRef.current = localLabel;
+  localStartRef.current = localStart;
+  localEndRef.current = localEnd;
+
+  const commitEditExternal = useCallback(() => {
+    data.label = localLabelRef.current;
+    data.startDate = localStartRef.current;
+    data.endDate = localEndRef.current;
+    setEditing(false);
+  }, []);
+
   // Dismiss editing when clicking outside the node
   useEffect(() => {
     if (!editing) return;
@@ -57,20 +72,6 @@ const TimelineNode = memo(({ id, data, selected }) => {
       document.removeEventListener('touchstart', handler);
     };
   }, [editing, commitEditExternal]);
-
-  const localLabelRef = useRef(localLabel);
-  const localStartRef = useRef(localStart);
-  const localEndRef = useRef(localEnd);
-  localLabelRef.current = localLabel;
-  localStartRef.current = localStart;
-  localEndRef.current = localEnd;
-
-  const commitEditExternal = useCallback(() => {
-    data.label = localLabelRef.current;
-    data.startDate = localStartRef.current;
-    data.endDate = localEndRef.current;
-    setEditing(false);
-  }, [data]);
 
   const handleDelete = useCallback(
     (e) => {
