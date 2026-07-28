@@ -11,6 +11,15 @@ const MediaNode = memo(({ id, data, selected }) => {
 
   const color = '#ba68c8';
 
+  // Ref for latest local label (used by click-outside handler)
+  const localLabelRef = useRef(localLabel);
+  localLabelRef.current = localLabel;
+
+  const commitEditExternal = useCallback(() => {
+    data.label = localLabelRef.current;
+    setEditing(false);
+  }, []);
+
   // Dismiss editing when clicking outside the node
   useEffect(() => {
     if (!editing) return;
@@ -29,14 +38,6 @@ const MediaNode = memo(({ id, data, selected }) => {
       document.removeEventListener('touchstart', handler);
     };
   }, [editing, commitEditExternal]);
-
-  const localLabelRef = useRef(localLabel);
-  localLabelRef.current = localLabel;
-
-  const commitEditExternal = useCallback(() => {
-    data.label = localLabelRef.current;
-    setEditing(false);
-  }, [data]);
 
   const handleDelete = useCallback(
     (e) => {
