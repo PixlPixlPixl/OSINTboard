@@ -15,6 +15,7 @@ import 'reactflow/dist/style.css';
 import OSINTNode from './OSINTNode';
 import TimelineNode from './TimelineNode';
 import MediaNode from './MediaNode';
+import QuickSearch from './QuickSearch';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
@@ -28,52 +29,106 @@ const getId = () => `osint_${++nodeId}`;
 
 const defaultViewport = { x: 0, y: 0, zoom: 1 };
 const SNAP_GRID = 20;
+const MAX_HISTORY = 50;
+const HISTORY_DEBOUNCE = 300; // ms
 
-const INITIAL_NODES = [
-  {
-    id: getId(),
-    type: 'osintNode',
-    position: { x: 300, y: 200 },
-    data: { nodeType: 'person', label: 'Target Name' },
-  },
-  {
-    id: getId(),
-    type: 'osintNode',
-    position: { x: 100, y: 400 },
-    data: { nodeType: 'phone', label: '' },
-  },
-  {
-    id: getId(),
-    type: 'osintNode',
-    position: { x: 500, y: 400 },
-    data: { nodeType: 'email', label: '' },
-  },
-];
+const INITIAL_NODES = [];
+const INITIAL_EDGES = [];
 
-const INITIAL_EDGES = [
-  {
-    id: 'e1-2',
-    source: 'osint_1',
-    target: 'osint_2',
-    style: { stroke: '#888', strokeWidth: 2 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#888' },
-  },
-  {
-    id: 'e1-3',
-    source: 'osint_1',
-    target: 'osint_3',
-    style: { stroke: '#888', strokeWidth: 2 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#888' },
-  },
-];
+// Deep-clone for history snapshots (nodes/edges are plain objects)
+const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
-const Canvas = forwardRef(function Canvas(props, ref) {
+const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePlaced }, ref) {
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const longPressTimer = useRef(null);
+  const [quickSearchPos, setQuickSearchPos] = useState(null);
 
-  // Expose save/load to parent
+  // --- Undo / Redo system ---
+  const historyRef = useRef([{ nodes: [], edges: [] }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const isUndoRedoing = useRef(false);
+  const pushTimerRef = useRef(null);
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < historyRef.current.length - 1;
+
+  // Debounced push: after changes settle, push a snapshot to history
+  const schedulePush = useCallback(() => {
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    pushTimerRef.current = setTimeout(() => {
+      if (isUndoRedoing.current) return;
+
+      const currentSnapshot = { nodes: clone(nodes), edges: clone(edges) };
+
+      historyRef.current = [
+        ...historyRef.current.slice(0, historyIndex + 1),
+        currentSnapshot,
+      ];
+
+      // Trim if over max
+      if (historyRef.current.length > MAX_HISTORY) {
+        historyRef.current = historyRef.current.slice(-MAX_HISTORY);
+      }
+
+      setHistoryIndex(historyRef.current.length - 1);
+    }, HISTORY_DEBOUNCE);
+  }, [nodes, edges, historyIndex]);
+
+  // Watch for changes and schedule history push
+  useEffect(() => {
+    if (isUndoRedoing.current) return;
+    schedulePush();
+  }, [nodes, edges, schedulePush]);
+
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const newIndex = historyIndex - 1;
+    const snapshot = historyRef.current[newIndex];
+    if (!snapshot) return;
+
+    isUndoRedoing.current = true;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setHistoryIndex(newIndex);
+    // Reset flag after React commits the update
+    setTimeout(() => { isUndoRedoing.current = false; }, 0);
+  }, [historyIndex, setNodes, setEdges]);
+
+  const redo = useCallback(() => {
+    if (historyIndex >= historyRef.current.length - 1) return;
+    const newIndex = historyIndex + 1;
+    const snapshot = historyRef.current[newIndex];
+    if (!snapshot) return;
+
+    isUndoRedoing.current = true;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setHistoryIndex(newIndex);
+    setTimeout(() => { isUndoRedoing.current = false; }, 0);
+  }, [historyIndex, setNodes, setEdges]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, redo]);
+
+  // Expose save/load + undo/redo to parent
   useImperativeHandle(ref, () => ({
     getSnapshot() {
       return { nodes, edges };
@@ -85,9 +140,19 @@ const Canvas = forwardRef(function Canvas(props, ref) {
       }, 0);
       nodeId = maxId;
 
+      isUndoRedoing.current = true;
       setNodes(newNodes);
       setEdges(newEdges);
+      setTimeout(() => { isUndoRedoing.current = false; }, 0);
+
+      // Reset history with this as the initial state
+      historyRef.current = [{ nodes: clone(newNodes), edges: clone(newEdges) }];
+      setHistoryIndex(0);
     },
+    canUndo,
+    canRedo,
+    undo,
+    redo,
   }));
 
   const onConnect = useCallback(
@@ -141,16 +206,9 @@ const Canvas = forwardRef(function Canvas(props, ref) {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-      const type = event.dataTransfer.getData('application/reactflow');
+  const addNodeAtPosition = useCallback(
+    (type, position) => {
       if (!type || !NODE_TYPE_MAP[type]) return;
-
-      const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
 
       const snappedX = Math.round(position.x / SNAP_GRID) * SNAP_GRID;
       const snappedY = Math.round(position.y / SNAP_GRID) * SNAP_GRID;
@@ -162,6 +220,7 @@ const Canvas = forwardRef(function Canvas(props, ref) {
         : isMedia
         ? 'mediaNode'
         : 'osintNode';
+
       const newNode = {
         id: getId(),
         type: reactFlowType,
@@ -171,25 +230,182 @@ const Canvas = forwardRef(function Canvas(props, ref) {
 
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, setNodes]
+    [setNodes]
+  );
+
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/reactflow');
+      if (!type || !NODE_TYPE_MAP[type]) return;
+
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      addNodeAtPosition(type, position);
+    },
+    [reactFlowInstance, addNodeAtPosition]
+  );
+
+  // Mobile tap-to-place: when a node type is pending, tapping the canvas places it
+  const onPaneClick = useCallback(
+    (event) => {
+      if (!isMobile || !pendingNodeType || !reactFlowInstance) return;
+
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      addNodeAtPosition(pendingNodeType, position);
+      onNodePlaced?.();
+    },
+    [isMobile, pendingNodeType, reactFlowInstance, addNodeAtPosition, onNodePlaced]
   );
 
   const onNodesDelete = useCallback((deleted) => {
     // React Flow handles edge deletion automatically
   }, []);
 
+  // Right-click / long-press → open quick-search
+  const openQuickSearch = useCallback((clientX, clientY) => {
+    // Position the search so it doesn't overflow viewport
+    const x = Math.min(clientX, window.innerWidth - 260);
+    const y = Math.min(clientY, window.innerHeight - 320);
+    setQuickSearchPos({ x, y });
+  }, []);
+
+  const closeQuickSearch = useCallback(() => {
+    setQuickSearchPos(null);
+  }, []);
+
+  const handleQuickSelect = useCallback(
+    (nodeType) => {
+      if (!reactFlowInstance || !quickSearchPos) return;
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: quickSearchPos.x,
+        y: quickSearchPos.y,
+      });
+      addNodeAtPosition(nodeType, position);
+      setQuickSearchPos(null);
+    },
+    [reactFlowInstance, quickSearchPos, addNodeAtPosition]
+  );
+
+  // Right-click on canvas
+  const handleContextMenu = useCallback(
+    (event) => {
+      event.preventDefault();
+      openQuickSearch(event.clientX, event.clientY);
+    },
+    [openQuickSearch]
+  );
+
+  // Long-press on mobile
+  const touchStartRef = useRef(null);
+
+  const handleTouchStart = useCallback(
+    (event) => {
+      // Only on mobile, and only if not interacting with a node
+      if (!isMobile) return;
+      if (event.target.closest('.react-flow__node')) return;
+      const touch = event.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      longPressTimer.current = setTimeout(() => {
+        if (touchStartRef.current) {
+          openQuickSearch(touchStartRef.current.x, touchStartRef.current.y);
+        }
+      }, 500);
+    },
+    [isMobile, openQuickSearch]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    touchStartRef.current = null;
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    // Cancel long-press if finger moves
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchStartRef.current = null;
+  }, []);
+
   // Listen for clear-canvas event from Sidebar
   useEffect(() => {
     const handler = () => {
+      isUndoRedoing.current = true;
       setNodes([]);
       setEdges([]);
+      setTimeout(() => { isUndoRedoing.current = false; }, 0);
     };
     window.addEventListener('clear-canvas', handler);
     return () => window.removeEventListener('clear-canvas', handler);
   }, [setNodes, setEdges]);
 
   return (
-    <div className="canvas-wrapper" ref={reactFlowWrapper}>
+    <div
+      className="canvas-wrapper"
+      ref={reactFlowWrapper}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+    >
+      {isMobile && pendingNodeType && (
+        <div className="canvas-placement-hint">
+          <span>
+            Tap canvas to place{' '}
+            <strong>
+              {NODE_TYPE_MAP[pendingNodeType]?.label || pendingNodeType}
+            </strong>
+          </span>
+          <button
+            className="canvas-placement-cancel"
+            onClick={() => onNodePlaced?.()}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Quick-search floating box */}
+      {quickSearchPos && (
+        <QuickSearch
+          position={quickSearchPos}
+          onSelect={handleQuickSelect}
+          onClose={closeQuickSearch}
+        />
+      )}
+
+      {/* Undo/Redo toolbar */}
+      <div className="undo-redo-toolbar">
+        <button
+          className="undo-redo-btn"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          ↩
+        </button>
+        <button
+          className="undo-redo-btn"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Y)"
+        >
+          ↪
+        </button>
+      </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -199,6 +415,7 @@ const Canvas = forwardRef(function Canvas(props, ref) {
         onInit={setReactFlowInstance}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onPaneClick={onPaneClick}
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
         defaultViewport={defaultViewport}
@@ -226,20 +443,23 @@ const Canvas = forwardRef(function Canvas(props, ref) {
             background: '#111',
             border: '1px solid #333',
             borderRadius: 8,
+            ...(isMobile ? { transform: 'scale(1.3)', transformOrigin: 'bottom left', marginBottom: 8, marginLeft: 8 } : {}),
           }}
         />
-        <MiniMap
-          nodeColor={(node) => {
-            const nt = node.data?.nodeType;
-            return NODE_TYPE_MAP[nt]?.color || '#555';
-          }}
-          maskColor="#000000cc"
-          style={{
-            background: '#0a0a0a',
-            border: '1px solid #333',
-            borderRadius: 8,
-          }}
-        />
+        {!isMobile && (
+          <MiniMap
+            nodeColor={(node) => {
+              const nt = node.data?.nodeType;
+              return NODE_TYPE_MAP[nt]?.color || '#555';
+            }}
+            maskColor="#000000cc"
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid #333',
+              borderRadius: 8,
+            }}
+          />
+        )}
       </ReactFlow>
     </div>
   );

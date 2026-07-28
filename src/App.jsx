@@ -1,17 +1,116 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
 import GraphModal from './components/GraphModal';
-import { saveGraph, loadGraph, exportGraphToFile, importGraphFromFile } from './data/graphStore';
+import {
+  saveGraph,
+  listGraphs,
+  getLastOpenGraph,
+  setLastOpenGraphId,
+  clearLastOpenGraph,
+  exportGraphToFile,
+  importGraphFromFile,
+} from './data/graphStore';
 import './App.css';
+
+const MOBILE_BREAKPOINT = 768;
+
+// Demo graph shown on very first launch (no saved graphs, no last-open)
+const DEMO_NODES = [
+  {
+    id: 'osint_1',
+    type: 'osintNode',
+    position: { x: 300, y: 200 },
+    data: { nodeType: 'person', label: 'Target Name' },
+  },
+  {
+    id: 'osint_2',
+    type: 'osintNode',
+    position: { x: 100, y: 400 },
+    data: { nodeType: 'phone', label: '' },
+  },
+  {
+    id: 'osint_3',
+    type: 'osintNode',
+    position: { x: 500, y: 400 },
+    data: { nodeType: 'email', label: '' },
+  },
+];
+
+const DEMO_EDGES = [
+  {
+    id: 'e1-2',
+    source: 'osint_1',
+    target: 'osint_2',
+    style: { stroke: '#888', strokeWidth: 2 },
+    markerEnd: { type: 'arrowclosed', color: '#888' },
+  },
+  {
+    id: 'e1-3',
+    source: 'osint_1',
+    target: 'osint_3',
+    style: { stroke: '#888', strokeWidth: 2 },
+    markerEnd: { type: 'arrowclosed', color: '#888' },
+  },
+];
 
 function App() {
   const [modalMode, setModalMode] = useState(null);
   const [graphName, setGraphName] = useState('Untitled');
   const [importError, setImportError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingNodeType, setPendingNodeType] = useState(null);
+  const [isMobile, setIsMobile] = useState(
+    () => window.innerWidth < MOBILE_BREAKPOINT
+  );
   const canvasRef = useRef(null);
   const importInputRef = useRef(null);
+
+  // On mount: load last-open graph, or show demo if nothing saved yet
+  useEffect(() => {
+    const lastGraph = getLastOpenGraph();
+    if (lastGraph) {
+      canvasRef.current?.loadSnapshot(lastGraph.nodes, lastGraph.edges);
+      setGraphName(lastGraph.name);
+    } else {
+      // First launch — show demo
+      canvasRef.current?.loadSnapshot(DEMO_NODES, DEMO_EDGES);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track viewport size for mobile detection
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(false);
+        setPendingNodeType(null);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  // Mobile: user tapped a node type in the sidebar — close & arm for placement
+  const handleSelectNodeType = useCallback((nodeType) => {
+    setPendingNodeType(nodeType);
+    setSidebarOpen(false);
+  }, []);
+
+  // Mobile: node was placed on canvas — clear pending type
+  const handleNodePlaced = useCallback(() => {
+    setPendingNodeType(null);
+  }, []);
 
   const openModal = useCallback((mode) => {
     setModalMode(mode);
@@ -31,10 +130,26 @@ function App() {
     []
   );
 
+  // Quick-save: overwrite if graph already has a saved name, otherwise open modal
+  const handleQuickSave = useCallback(() => {
+    const graphs = listGraphs();
+    const exists = graphs.some((g) => g.name === graphName);
+    if (exists && graphName !== 'Untitled') {
+      const snapshot = canvasRef.current?.getSnapshot();
+      if (!snapshot) return;
+      saveGraph(graphName, snapshot.nodes, snapshot.edges);
+    } else {
+      openModal('save');
+    }
+  }, [graphName, openModal]);
+
   const handleLoad = useCallback(
-    (nodes, edges, name) => {
+    (nodes, edges, name, graphId) => {
       canvasRef.current?.loadSnapshot(nodes, edges);
       setGraphName(name || 'Untitled');
+      if (graphId) {
+        setLastOpenGraphId(graphId);
+      }
     },
     []
   );
@@ -42,6 +157,7 @@ function App() {
   const handleNew = useCallback(() => {
     canvasRef.current?.loadSnapshot([], []);
     setGraphName('Untitled');
+    clearLastOpenGraph();
   }, []);
 
   const handleExport = useCallback(() => {
@@ -73,10 +189,38 @@ function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="app">
+      <div className={`app ${isMobile ? 'app--mobile' : ''}`}>
+        {isMobile && (
+          <header className="mobile-header">
+            <button
+              className="mobile-header__hamburger"
+              onClick={toggleSidebar}
+              aria-label="Toggle menu"
+            >
+              <span className="hamburger-icon">
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
+            <span className="mobile-header__title">{graphName}</span>
+            <button
+              className="mobile-header__action"
+              onClick={handleQuickSave}
+              title={graphName !== 'Untitled' ? 'Save' : 'Save as…'}
+            >
+              💾
+            </button>
+          </header>
+        )}
         <Sidebar
           graphName={graphName}
           importError={importError}
+          isMobile={isMobile}
+          isOpen={sidebarOpen}
+          pendingNodeType={pendingNodeType}
+          onClose={closeSidebar}
+          onSelectNodeType={handleSelectNodeType}
           onSave={() => openModal('save')}
           onLoad={() => openModal('load')}
           onNew={handleNew}
@@ -84,7 +228,12 @@ function App() {
           onExport={handleExport}
           onImport={handleImport}
         />
-        <Canvas ref={canvasRef} />
+        <Canvas
+          ref={canvasRef}
+          isMobile={isMobile}
+          pendingNodeType={pendingNodeType}
+          onNodePlaced={handleNodePlaced}
+        />
         <input
           ref={importInputRef}
           type="file"
