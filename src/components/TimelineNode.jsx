@@ -256,19 +256,6 @@ const TimelineNode = memo(({ id, data, selected }) => {
                 );
               })}
             </div>
-            {editingEntry && (
-              <div className="timeline-node-entry-editor">
-                <input
-                  className="timeline-node-input"
-                  type="date"
-                  value={localEntryDate}
-                  onChange={(e) => setLocalEntryDate(e.target.value)}
-                  onBlur={() => commitEntryDate(editingEntry)}
-                  onKeyDown={(e) => entryKeyDown(e, editingEntry)}
-                  autoFocus
-                />
-              </div>
-            )}
           </div>
         ) : (
           <div className="timeline-node-no-range">
@@ -310,19 +297,20 @@ const TimelineNode = memo(({ id, data, selected }) => {
                 );
               })}
             </div>
-            {editingEntry && (
-              <div className="timeline-node-entry-editor">
-                <input
-                  className="timeline-node-input"
-                  type="date"
-                  value={localEntryDate}
-                  onChange={(e) => setLocalEntryDate(e.target.value)}
-                  onBlur={() => commitEntryDate(editingEntry)}
-                  onKeyDown={(e) => entryKeyDown(e, editingEntry)}
-                  autoFocus
-                />
-              </div>
-            )}
+          </div>
+        )}
+
+        {editingEntry && (
+          <div className="timeline-node-entry-editor">
+            <input
+              className="timeline-node-input"
+              type="date"
+              value={localEntryDate}
+              onChange={(e) => setLocalEntryDate(e.target.value)}
+              onBlur={() => commitEntryDate(editingEntry)}
+              onKeyDown={(e) => entryKeyDown(e, editingEntry)}
+              autoFocus
+            />
           </div>
         )}
 

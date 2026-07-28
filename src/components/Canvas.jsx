@@ -100,17 +100,40 @@ const Canvas = forwardRef(function Canvas(props, ref) {
         animated: false,
       };
 
+      const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
-      if (targetNode?.data?.nodeType === 'timeline') {
-        const sourceNode = nodes.find((n) => n.id === params.source);
-        if (sourceNode?.data?.dateValue) {
-          newEdge.data = { timelineDate: sourceNode.data.dateValue };
+
+      // Propagate dateValue from source (date module → any target)
+      if (sourceNode?.data?.dateValue) {
+        newEdge.data = { timelineDate: sourceNode.data.dateValue };
+        if (targetNode && targetNode.data.nodeType !== 'timeline') {
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === targetNode.id
+                ? { ...n, data: { ...n.data, dateValue: sourceNode.data.dateValue } }
+                : n
+            )
+          );
+        }
+      }
+
+      // Also propagate when date module is the target (connecting TO a date node)
+      if (targetNode?.data?.dateValue && !sourceNode?.data?.dateValue) {
+        newEdge.data = { timelineDate: targetNode.data.dateValue };
+        if (sourceNode && sourceNode.data.nodeType !== 'timeline') {
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === sourceNode.id
+                ? { ...n, data: { ...n.data, dateValue: targetNode.data.dateValue } }
+                : n
+            )
+          );
         }
       }
 
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, nodes]
+    [setEdges, setNodes, nodes]
   );
 
   const onDragOver = useCallback((event) => {
