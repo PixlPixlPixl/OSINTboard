@@ -26,9 +26,14 @@ const OSINTNode = memo(({ id, data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(data.label || '');
   const [dateValue, setDateValue] = useState(data.dateValue || '');
+  const [personTitle, setPersonTitle] = useState(data.personTitle || '');
   const media = data.media || [];
   const { deleteElements } = useReactFlow();
   const nodeRef = useRef(null);
+
+  const isPerson = data.nodeType === 'person';
+  const isDate = data.nodeType === 'date';
+  const isExternalLink = data.nodeType === 'external-link';
 
   // Dismiss editing when clicking outside the node
   useEffect(() => {
@@ -38,7 +43,6 @@ const OSINTNode = memo(({ id, data, selected }) => {
         commitEditRef.current();
       }
     };
-    // Delay to avoid catching the double-click that opened edit mode
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handler);
       document.addEventListener('touchstart', handler);
@@ -50,17 +54,18 @@ const OSINTNode = memo(({ id, data, selected }) => {
     };
   }, [editing]);
 
-  // Ref to hold latest label/dateValue for the outside-click handler
+  // Refs for latest values (used by click-outside handler)
   const labelRef = useRef(label);
   const dateRef = useRef(dateValue);
+  const personTitleRef = useRef(personTitle);
   labelRef.current = label;
   dateRef.current = dateValue;
+  personTitleRef.current = personTitle;
 
   const commitEditRef = useRef(() => {
     data.label = labelRef.current;
-    if (data.nodeType === 'date') {
-      data.dateValue = dateRef.current;
-    }
+    if (isDate) data.dateValue = dateRef.current;
+    if (isPerson) data.personTitle = personTitleRef.current;
     setEditing(false);
   });
 
@@ -85,22 +90,20 @@ const OSINTNode = memo(({ id, data, selected }) => {
   }, [data]);
 
   const color = nodeDef.color;
-  const isDate = data.nodeType === 'date';
-  const isExternalLink = data.nodeType === 'external-link';
   const youtubeId = useMemo(() => extractYouTubeId(data.label), [data.label]);
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
     setLabel(data.label || '');
     setDateValue(data.dateValue || '');
+    setPersonTitle(data.personTitle || '');
     setEditing(true);
   };
 
   const commitEdit = () => {
     data.label = label;
-    if (isDate) {
-      data.dateValue = dateValue;
-    }
+    if (isDate) data.dateValue = dateValue;
+    if (isPerson) data.personTitle = personTitle;
     setEditing(false);
   };
 
@@ -112,6 +115,7 @@ const OSINTNode = memo(({ id, data, selected }) => {
       setEditing(false);
       setLabel(data.label || '');
       setDateValue(data.dateValue || '');
+      setPersonTitle(data.personTitle || '');
     }
   };
 
@@ -202,7 +206,9 @@ const OSINTNode = memo(({ id, data, selected }) => {
               onChange={(e) => setLabel(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                isExternalLink
+                isPerson
+                  ? 'Full name…'
+                  : isExternalLink
                   ? 'Paste a URL…'
                   : isDate
                   ? 'Event description…'
@@ -210,6 +216,15 @@ const OSINTNode = memo(({ id, data, selected }) => {
               }
               autoFocus={!isDate}
             />
+            {isPerson && (
+              <input
+                className="osint-node-input osint-node-input--title"
+                value={personTitle}
+                onChange={(e) => setPersonTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Title, role, or position…"
+              />
+            )}
             {isExternalLink && (
               <div className="osint-node-url-hint">
                 YouTube links auto-embed a player ↗
@@ -238,7 +253,12 @@ const OSINTNode = memo(({ id, data, selected }) => {
                   🔗 {data.label}
                 </span>
               ) : (
-                <div>{data.label}</div>
+                <div>
+                  {data.label}
+                  {isPerson && data.personTitle && (
+                    <div className="osint-node-person-title">{data.personTitle}</div>
+                  )}
+                </div>
               )
             ) : (
               <span className="osint-node-placeholder">

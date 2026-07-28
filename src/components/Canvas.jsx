@@ -35,8 +35,27 @@ const HISTORY_DEBOUNCE = 300; // ms
 const INITIAL_NODES = [];
 const INITIAL_EDGES = [];
 
-// Deep-clone for history snapshots (nodes/edges are plain objects)
-const clone = (obj) => JSON.parse(JSON.stringify(obj));
+// Deep-clone for history snapshots (strips heavy base64 media data)
+const cloneForHistory = (nodes, edges) => {
+  const clonedNodes = nodes.map((n) => ({
+    ...n,
+    data: { ...n.data, media: undefined },
+    position: { ...n.position },
+  }));
+  const clonedEdges = edges.map((e) => ({ ...e }));
+  return { nodes: clonedNodes, edges: clonedEdges };
+};
+
+// Merge history snapshot back into live state, preserving media
+const mergeSnapshot = (snapshotNodes, liveNodes) => {
+  return snapshotNodes.map((sn) => {
+    const live = liveNodes.find((n) => n.id === sn.id);
+    return {
+      ...sn,
+      data: { ...sn.data, media: live?.data?.media },
+    };
+  });
+};
 
 const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePlaced }, ref) {
   const [nodes, setNodes, onNodesChange] = useNodesState(INITIAL_NODES);
@@ -61,7 +80,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     pushTimerRef.current = setTimeout(() => {
       if (isUndoRedoing.current) return;
 
-      const currentSnapshot = { nodes: clone(nodes), edges: clone(edges) };
+      const currentSnapshot = cloneForHistory(nodes, edges);
 
       historyRef.current = [
         ...historyRef.current.slice(0, historyIndex + 1),
@@ -90,12 +109,12 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     if (!snapshot) return;
 
     isUndoRedoing.current = true;
-    setNodes(snapshot.nodes);
+    setNodes(mergeSnapshot(snapshot.nodes, nodes));
     setEdges(snapshot.edges);
     setHistoryIndex(newIndex);
     // Reset flag after React commits the update
     setTimeout(() => { isUndoRedoing.current = false; }, 0);
-  }, [historyIndex, setNodes, setEdges]);
+  }, [historyIndex, setNodes, setEdges, nodes]);
 
   const redo = useCallback(() => {
     if (historyIndex >= historyRef.current.length - 1) return;
@@ -104,11 +123,11 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     if (!snapshot) return;
 
     isUndoRedoing.current = true;
-    setNodes(snapshot.nodes);
+    setNodes(mergeSnapshot(snapshot.nodes, nodes));
     setEdges(snapshot.edges);
     setHistoryIndex(newIndex);
     setTimeout(() => { isUndoRedoing.current = false; }, 0);
-  }, [historyIndex, setNodes, setEdges]);
+  }, [historyIndex, setNodes, setEdges, nodes]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -146,7 +165,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
       setTimeout(() => { isUndoRedoing.current = false; }, 0);
 
       // Reset history with this as the initial state
-      historyRef.current = [{ nodes: clone(newNodes), edges: clone(newEdges) }];
+      historyRef.current = [cloneForHistory(newNodes, newEdges)];
       setHistoryIndex(0);
     },
     canUndo,
