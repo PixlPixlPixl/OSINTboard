@@ -187,10 +187,10 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
       const sourceNode = nodes.find((n) => n.id === params.source);
       const targetNode = nodes.find((n) => n.id === params.target);
 
-      // Propagate dateValue from source (date module → any target)
+      // Propagate dateValue from source (date module → any non-date, non-timeline target)
       if (sourceNode?.data?.dateValue) {
         newEdge.data = { timelineDate: sourceNode.data.dateValue };
-        if (targetNode && targetNode.data.nodeType !== 'timeline') {
+        if (targetNode && targetNode.data.nodeType !== 'timeline' && targetNode.data.nodeType !== 'date') {
           setNodes((nds) =>
             nds.map((n) =>
               n.id === targetNode.id
@@ -204,7 +204,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
       // Also propagate when date module is the target (connecting TO a date node)
       if (targetNode?.data?.dateValue && !sourceNode?.data?.dateValue) {
         newEdge.data = { timelineDate: targetNode.data.dateValue };
-        if (sourceNode && sourceNode.data.nodeType !== 'timeline') {
+        if (sourceNode && sourceNode.data.nodeType !== 'timeline' && sourceNode.data.nodeType !== 'date') {
           setNodes((nds) =>
             nds.map((n) =>
               n.id === sourceNode.id
