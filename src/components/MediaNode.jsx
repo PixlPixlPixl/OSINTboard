@@ -5,6 +5,7 @@ import MediaAttachments from './MediaAttachments';
 const MediaNode = memo(({ id, data, selected }) => {
   const [editing, setEditing] = useState(false);
   const [localLabel, setLocalLabel] = useState(data.label || '');
+  const [renderTick, setRenderTick] = useState(0);
   const media = data.media || [];
   const { deleteElements } = useReactFlow();
   const nodeRef = useRef(null);
@@ -56,7 +57,7 @@ const MediaNode = memo(({ id, data, selected }) => {
     (item) => {
       if (!data.media) data.media = [];
       data.media.push(item);
-      setLocalLabel((prev) => prev);
+      setRenderTick((t) => t + 1);
     },
     [data]
   );
@@ -65,7 +66,7 @@ const MediaNode = memo(({ id, data, selected }) => {
     (mediaId) => {
       if (!data.media) return;
       data.media = data.media.filter((m) => m.id !== mediaId);
-      setLocalLabel((prev) => prev);
+      setRenderTick((t) => t + 1);
     },
     [data]
   );

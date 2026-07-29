@@ -3,26 +3,11 @@ import { memo, useRef, useState } from 'react';
 let mediaIdCounter = 0;
 const nextMediaId = () => `media_${++mediaIdCounter}`;
 
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function classifyMime(mime) {
   if (mime.startsWith('image/')) return 'image';
   if (mime.startsWith('video/')) return 'video';
   if (mime.startsWith('audio/')) return 'audio';
   return 'other';
-}
-
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -44,22 +29,14 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
       setError(
         `Files over 10 MB aren't supported (${oversized.map((f) => f.name).join(', ')})`
       );
+      e.target.value = '';
       return;
     }
 
-    const totalNew = files.reduce((s, f) => s + f.size, 0);
-    const totalExisting = media.reduce((s, m) => {
-      // approximate: base64 is ~1.37x binary size
-      return s + Math.round(m.url.length * 0.73);
-    }, 0);
-    if (totalExisting + totalNew > 30 * 1024 * 1024) {
-      setError('Total media storage exceeds ~30 MB. Remove some files first.');
-      return;
-    }
-
+    // Read files as object URLs (much lighter than base64 data URLs)
     for (const file of files) {
       try {
-        const url = await readFileAsDataURL(file);
+        const url = URL.createObjectURL(file);
         onAdd({
           id: nextMediaId(),
           type: classifyMime(file.type),
@@ -72,7 +49,6 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
       }
     }
 
-    // Reset so same file can be picked again
     e.target.value = '';
   };
 

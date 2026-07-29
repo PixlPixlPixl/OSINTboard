@@ -610,6 +610,45 @@ html, body, #root {
   color: #444;
 }
 
+/* Media preview in view mode */
+.osint-node-media-preview {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.osint-node-media-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.osint-node-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.osint-node-media-badge {
+  font-size: 16px;
+}
+
+.osint-node-media-more {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}
+
 /* ==========================================
    EXTERNAL LINK / YOUTUBE EMBED
    ========================================== */
