@@ -11,7 +11,16 @@ function classifyMime(mime) {
   return 'other';
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
   const fileInputRef = useRef(null);
@@ -22,7 +31,7 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
     fileInputRef.current?.click();
   };
 
-  const handleFiles = (e) => {
+  const handleFiles = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     const files = Array.from(e.target.files || []);
@@ -39,10 +48,17 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
 
     for (const file of files) {
       try {
-        const url = URL.createObjectURL(file);
+        const type = classifyMime(file.type);
+        // Images: use base64 data URL (reliable, survives re-renders)
+        // Videos/audio: use object URL (lighter for large files)
+        const url =
+          type === 'image'
+            ? await readFileAsDataURL(file)
+            : URL.createObjectURL(file);
+
         onAdd({
           id: nextMediaId(),
-          type: classifyMime(file.type),
+          type,
           name: file.name,
           url,
           mime: file.type,
