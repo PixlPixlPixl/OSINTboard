@@ -1,4 +1,5 @@
 import { memo, useRef, useState } from 'react';
+import MediaLightbox from './MediaLightbox';
 
 let mediaIdCounter = 0;
 const nextMediaId = () => `media_${++mediaIdCounter}`;
@@ -15,6 +16,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
   const fileInputRef = useRef(null);
   const [error, setError] = useState(null);
+  const [lightboxItem, setLightboxItem] = useState(null);
 
   const handlePick = () => {
     fileInputRef.current?.click();
@@ -35,7 +37,6 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
       return;
     }
 
-    // Read files as object URLs (much lighter than base64 data URLs)
     for (const file of files) {
       try {
         const url = URL.createObjectURL(file);
@@ -65,9 +66,15 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
           {media.map((item) => (
             <div key={item.id} className="media-attachment-item">
               {item.type === 'image' && (
-                <div className="media-attachment-preview media-attachment-preview--badge">
-                  <span className="media-badge-icon">📷</span>
-                  <span className="media-badge-name">{item.name}</span>
+                <div
+                  className="media-attachment-preview"
+                  onClick={() => setLightboxItem(item)}
+                >
+                  <img
+                    src={item.url}
+                    alt={item.name}
+                    className="media-attachment-thumb"
+                  />
                 </div>
               )}
               {item.type === 'video' && (
@@ -111,6 +118,13 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
         className="media-attachments-hidden-input"
         onChange={handleFiles}
       />
+
+      {lightboxItem && (
+        <MediaLightbox
+          item={lightboxItem}
+          onClose={() => setLightboxItem(null)}
+        />
+      )}
     </div>
   );
 });

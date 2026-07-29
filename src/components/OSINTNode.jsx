@@ -2,6 +2,7 @@ import { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 import MediaAttachments from './MediaAttachments';
+import MediaLightbox from './MediaLightbox';
 
 /**
  * Extract a YouTube video ID from various URL formats.
@@ -28,6 +29,7 @@ const OSINTNode = memo(({ id, data, selected }) => {
   const [dateValue, setDateValue] = useState(data.dateValue || '');
   const [personTitle, setPersonTitle] = useState(data.personTitle || '');
   const [renderTick, setRenderTick] = useState(0);
+  const [lightboxItem, setLightboxItem] = useState(null);
   const media = data.media || [];
   const { deleteElements } = useReactFlow();
   const nodeRef = useRef(null);
@@ -135,6 +137,7 @@ const OSINTNode = memo(({ id, data, selected }) => {
   };
 
   return (
+    <>
     <div
       ref={nodeRef}
       className={`osint-node ${selected ? 'selected' : ''} ${isExternalLink ? 'osint-node--external-link' : ''} ${youtubeId ? 'osint-node--has-video' : ''}`}
@@ -271,8 +274,14 @@ const OSINTNode = memo(({ id, data, selected }) => {
             {media.length > 0 && (
               <div className="osint-node-media-preview">
                 {media.slice(0, 4).map((item) => (
-                  <div key={item.id} className="osint-node-media-thumb">
-                    {item.type === 'image' && '📷'}
+                  <div
+                    key={item.id}
+                    className="osint-node-media-thumb"
+                    onClick={() => setLightboxItem(item)}
+                  >
+                    {item.type === 'image' && (
+                      <img src={item.url} alt={item.name} />
+                    )}
                     {item.type === 'video' && '🎬'}
                     {item.type === 'audio' && '🎵'}
                   </div>
@@ -296,6 +305,13 @@ const OSINTNode = memo(({ id, data, selected }) => {
         }}
       />
     </div>
+    {lightboxItem && (
+      <MediaLightbox
+        item={lightboxItem}
+        onClose={() => setLightboxItem(null)}
+      />
+    )}
+    </>
   );
 });
 

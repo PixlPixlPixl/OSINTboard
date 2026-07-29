@@ -164,16 +164,19 @@ const MediaNode = memo(({ id, data, selected }) => {
                 {media.map((item) => (
                   <div key={item.id} className="media-node-gallery-item">
                     {item.type === 'image' && (
-                      <div className="media-node-gallery-img media-node-gallery-badge">
-                        📷
-                        <span className="media-node-gallery-name">{item.name}</span>
-                      </div>
+                      <img
+                        src={item.url}
+                        alt={item.name}
+                        className="media-node-gallery-img"
+                      />
                     )}
                     {item.type === 'video' && (
-                      <div className="media-node-gallery-video media-node-gallery-badge">
-                        🎬
-                        <span className="media-node-gallery-name">{item.name}</span>
-                      </div>
+                      <video
+                        src={item.url}
+                        className="media-node-gallery-video"
+                        controls
+                        preload="metadata"
+                      />
                     )}
                     {item.type === 'audio' && (
                       <div className="media-node-gallery-audio">
