@@ -1568,6 +1568,101 @@ html, body, #root {
   height: 100px;
 }
 
+/* ==========================================
+   LIGHTBOX
+   ========================================== */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #555;
+  border-radius: 50%;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #999;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.lightbox-video {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 6px;
+}
+
+.lightbox-audio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+}
+
+.lightbox-audio-icon {
+  font-size: 64px;
+}
+
+.lightbox-audio-name {
+  color: #ccc;
+  font-size: 14px;
+  text-align: center;
+}
+
+.lightbox-audio audio {
+  width: 280px;
+}
+
+.lightbox-name {
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .media-node-empty {
   text-align: center;
   font-size: 11px;
