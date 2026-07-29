@@ -272,15 +272,9 @@ const OSINTNode = memo(({ id, data, selected }) => {
               <div className="osint-node-media-preview">
                 {media.slice(0, 4).map((item) => (
                   <div key={item.id} className="osint-node-media-thumb">
-                    {item.type === 'image' && (
-                      <img src={item.url} alt={item.name} />
-                    )}
-                    {item.type === 'video' && (
-                      <span className="osint-node-media-badge">🎬</span>
-                    )}
-                    {item.type === 'audio' && (
-                      <span className="osint-node-media-badge">🎵</span>
-                    )}
+                    {item.type === 'image' && '📷'}
+                    {item.type === 'video' && '🎬'}
+                    {item.type === 'audio' && '🎵'}
                   </div>
                 ))}
                 {media.length > 4 && (

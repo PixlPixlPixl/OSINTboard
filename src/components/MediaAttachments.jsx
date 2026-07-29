@@ -63,13 +63,9 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
           {media.map((item) => (
             <div key={item.id} className="media-attachment-item">
               {item.type === 'image' && (
-                <div className="media-attachment-preview">
-                  <img
-                    src={item.url}
-                    alt={item.name}
-                    className="media-attachment-thumb"
-                    onClick={() => window.open(item.url, '_blank')}
-                  />
+                <div className="media-attachment-preview media-attachment-preview--badge">
+                  <span className="media-badge-icon">📷</span>
+                  <span className="media-badge-name">{item.name}</span>
                 </div>
               )}
               {item.type === 'video' && (
