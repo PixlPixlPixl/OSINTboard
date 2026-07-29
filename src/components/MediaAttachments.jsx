@@ -20,7 +20,9 @@ const MediaAttachments = memo(({ media = [], onAdd, onRemove }) => {
     fileInputRef.current?.click();
   };
 
-  const handleFiles = async (e) => {
+  const handleFiles = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const files = Array.from(e.target.files || []);
     setError(null);
 
