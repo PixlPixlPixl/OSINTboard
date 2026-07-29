@@ -27,6 +27,7 @@ const OSINTNode = memo(({ id, data, selected }) => {
   const [label, setLabel] = useState(data.label || '');
   const [dateValue, setDateValue] = useState(data.dateValue || '');
   const [personTitle, setPersonTitle] = useState(data.personTitle || '');
+  const [renderTick, setRenderTick] = useState(0);
   const media = data.media || [];
   const { deleteElements } = useReactFlow();
   const nodeRef = useRef(null);
@@ -80,13 +81,13 @@ const OSINTNode = memo(({ id, data, selected }) => {
   const handleAddMedia = useCallback((item) => {
     if (!data.media) data.media = [];
     data.media.push(item);
-    setLabel((prev) => prev);
+    setRenderTick((t) => t + 1);
   }, [data]);
 
   const handleRemoveMedia = useCallback((mediaId) => {
     if (!data.media) return;
     data.media = data.media.filter((m) => m.id !== mediaId);
-    setLabel((prev) => prev);
+    setRenderTick((t) => t + 1);
   }, [data]);
 
   const color = nodeDef.color;
@@ -266,6 +267,26 @@ const OSINTNode = memo(({ id, data, selected }) => {
                   ? 'Double-click to add a URL'
                   : 'Double-click to edit'}
               </span>
+            )}
+            {media.length > 0 && (
+              <div className="osint-node-media-preview">
+                {media.slice(0, 4).map((item) => (
+                  <div key={item.id} className="osint-node-media-thumb">
+                    {item.type === 'image' && (
+                      <img src={item.url} alt={item.name} />
+                    )}
+                    {item.type === 'video' && (
+                      <span className="osint-node-media-badge">🎬</span>
+                    )}
+                    {item.type === 'audio' && (
+                      <span className="osint-node-media-badge">🎵</span>
+                    )}
+                  </div>
+                ))}
+                {media.length > 4 && (
+                  <span className="osint-node-media-more">+{media.length - 4}</span>
+                )}
+              </div>
             )}
           </div>
         )}
