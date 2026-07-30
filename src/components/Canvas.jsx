@@ -28,7 +28,7 @@ let nodeId = 0;
 const getId = () => `osint_${++nodeId}`;
 
 const defaultViewport = { x: 0, y: 0, zoom: 1 };
-const SNAP_GRID = 20;
+const SNAP_GRID = 10;
 const MAX_HISTORY = 50;
 const HISTORY_DEBOUNCE = 300; // ms
 
@@ -370,10 +370,44 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     return () => window.removeEventListener('clear-canvas', handler);
   }, [setNodes, setEdges]);
 
+  // Arrow-key panning when board is focused
+  const ARROW_PAN = 40;
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!reactFlowInstance) return;
+      // Only handle when no modifier held and no input is focused
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      let dx = 0;
+      let dy = 0;
+      switch (e.key) {
+        case 'ArrowUp':    dy =  ARROW_PAN; break;
+        case 'ArrowDown':  dy = -ARROW_PAN; break;
+        case 'ArrowLeft':  dx =  ARROW_PAN; break;
+        case 'ArrowRight': dx = -ARROW_PAN; break;
+        default: return;
+      }
+
+      e.preventDefault();
+      const { x, y, zoom } = reactFlowInstance.getViewport();
+      reactFlowInstance.setViewport({ x: x + dx, y: y + dy, zoom });
+    },
+    [reactFlowInstance]
+  );
+
+  const handleWrapperMouseDown = useCallback(() => {
+    reactFlowWrapper.current?.focus();
+  }, []);
+
   return (
     <div
       className="canvas-wrapper"
       ref={reactFlowWrapper}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      onMouseDown={handleWrapperMouseDown}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
