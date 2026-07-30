@@ -60,6 +60,12 @@ function App() {
   const [graphName, setGraphName] = useState('Untitled');
   const [importError, setImportError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  }, []);
   const [pendingNodeType, setPendingNodeType] = useState(null);
   const [isMobile, setIsMobile] = useState(
     () => window.innerWidth < MOBILE_BREAKPOINT
@@ -131,17 +137,26 @@ function App() {
   );
 
   // Quick-save: overwrite if graph already has a saved name, otherwise open modal
-  const handleQuickSave = useCallback(() => {
+  const handleQuickSave = useCallback((e) => {
+    e.currentTarget.blur();
     const graphs = listGraphs();
     const exists = graphs.some((g) => g.name === graphName);
     if (exists && graphName !== 'Untitled') {
       const snapshot = canvasRef.current?.getSnapshot();
-      if (!snapshot) return;
-      saveGraph(graphName, snapshot.nodes, snapshot.edges);
+      if (!snapshot) {
+        showToast('Nothing to save', 'error');
+        return;
+      }
+      try {
+        saveGraph(graphName, snapshot.nodes, snapshot.edges);
+        showToast('Saved', 'success');
+      } catch {
+        showToast('Save failed', 'error');
+      }
     } else {
       openModal('save');
     }
-  }, [graphName, openModal]);
+  }, [graphName, openModal, showToast]);
 
   const handleLoad = useCallback(
     (nodes, edges, name, graphId) => {
@@ -212,6 +227,11 @@ function App() {
               💾
             </button>
           </header>
+        )}
+        {toast && (
+          <div className={`toast-notification toast-notification--${toast.type}`}>
+            {toast.message}
+          </div>
         )}
         <Sidebar
           graphName={graphName}
