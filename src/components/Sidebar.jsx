@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NODE_TYPES } from '../data/nodeTypes';
 
 const Sidebar = ({
@@ -25,6 +26,9 @@ const Sidebar = ({
       onSelectNodeType(nodeType);
     }
   };
+
+  const [graphDrawerOpen, setGraphDrawerOpen] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
 
   const handleAction = (fn) => () => {
     fn();
@@ -58,24 +62,20 @@ const Sidebar = ({
           </p>
         </div>
 
-        {!isMobile && (
-          <div className="sidebar-instructions">
+        <div className={`sidebar-instructions${instructionsOpen ? ' sidebar-instructions--open' : ''}`}>
             <span className="key-hint">Drag</span> nodes onto canvas<br />
             <span className="key-hint">Click + Drag</span> between nodes to connect<br />
             <span className="key-hint">Double-click</span> a node to edit its label<br />
             <span className="key-hint">Delete</span> or <span className="key-hint">Backspace</span> to remove selected<br />
             <span className="key-hint">Scroll</span> to zoom · <span className="key-hint">Drag</span> canvas to pan
           </div>
-        )}
 
-        {isMobile && (
-          <div className="sidebar-instructions sidebar-instructions--mobile">
+        <div className={`sidebar-instructions sidebar-instructions--mobile${instructionsOpen ? ' sidebar-instructions--open' : ''}`}>
             <span className="key-hint">Tap</span> a node type to select it<br />
             <span className="key-hint">Tap</span> canvas to place the node<br />
             <span className="key-hint">Double-tap</span> a node to edit its label<br />
             <span className="key-hint">Pinch</span> to zoom · <span className="key-hint">Drag</span> to pan
           </div>
-        )}
 
         {isMobile && pendingNodeType && (
           <div className="sidebar-pending-banner">
@@ -89,6 +89,18 @@ const Sidebar = ({
           </div>
         )}
 
+        <button
+          className="sidebar-divider"
+          onClick={() => setInstructionsOpen((v) => !v)}
+          aria-label={instructionsOpen ? 'Collapse tutorial' : 'Expand tutorial'}
+          title={instructionsOpen ? 'Collapse tutorial' : 'Expand tutorial'}
+        >
+          <span className="sidebar-divider__line" />
+          <span className={`sidebar-divider__arrow${instructionsOpen ? ' sidebar-divider__arrow--open' : ''}`}>
+            ▸
+          </span>
+          <span className="sidebar-divider__line" />
+        </button>
         <div className="sidebar-section-label">NODES</div>
         <div className="sidebar-nodes">
           {NODE_TYPES.map((nt) => (
@@ -109,35 +121,48 @@ const Sidebar = ({
           ))}
         </div>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-section-label">GRAPH</div>
+        <div className="sidebar-drawer">
+          <button
+            className="sidebar-drawer__toggle"
+            onClick={() => setGraphDrawerOpen((v) => !v)}
+            aria-expanded={graphDrawerOpen}
+          >
+            <span className={`sidebar-drawer__arrow${graphDrawerOpen ? ' sidebar-drawer__arrow--open' : ''}`}>
+              ▸
+            </span>
+            Graph Actions
+          </button>
 
-          <button className="sidebar-btn" onClick={handleAction(onSave)}>
-            💾 Save
-          </button>
-          <button className="sidebar-btn" onClick={handleAction(onLoad)}>
-            📂 Load
-          </button>
+          <div className={`sidebar-drawer__content${graphDrawerOpen ? ' sidebar-drawer__content--open' : ''}`}>
+              <div className="sidebar-section-label">GRAPH</div>
 
-          <div className="sidebar-btn-row">
-            <button className="sidebar-btn sidebar-btn-sm" onClick={handleAction(onNew)}>
-              ✨ New
-            </button>
-            <button className="sidebar-btn sidebar-btn-sm sidebar-btn-danger" onClick={handleAction(onDelete)}>
-              🗑️ Delete
-            </button>
-          </div>
+              <button className="sidebar-btn" onClick={handleAction(onSave)}>
+                💾 Save
+              </button>
+              <button className="sidebar-btn" onClick={handleAction(onLoad)}>
+                📂 Load
+              </button>
 
-          <div className="sidebar-section-label sidebar-section-label--export">EXPORT / IMPORT</div>
-          <button className="sidebar-btn" onClick={handleAction(onExport)}>
-            📥 Export to file
-          </button>
-          <button className="sidebar-btn" onClick={handleAction(onImport)}>
-            📤 Import from file
-          </button>
-          {importError && (
-            <div className="sidebar-import-error">{importError}</div>
-          )}
+              <div className="sidebar-btn-row">
+                <button className="sidebar-btn sidebar-btn-sm" onClick={handleAction(onNew)}>
+                  ✨ New
+                </button>
+                <button className="sidebar-btn sidebar-btn-sm sidebar-btn-danger" onClick={handleAction(onDelete)}>
+                  🗑️ Delete
+                </button>
+              </div>
+
+              <div className="sidebar-section-label sidebar-section-label--export">EXPORT / IMPORT</div>
+              <button className="sidebar-btn" onClick={handleAction(onExport)}>
+                📥 Export to file
+              </button>
+              <button className="sidebar-btn" onClick={handleAction(onImport)}>
+                📤 Import from file
+              </button>
+              {importError && (
+                <div className="sidebar-import-error">{importError}</div>
+              )}
+            </div>
         </div>
       </aside>
     </>
