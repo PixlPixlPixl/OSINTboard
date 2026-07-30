@@ -493,6 +493,10 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+.auto-layout-btn:hover:not(:disabled) {
+  color: #4fc3f7;
+}
+
 /* ==========================================
    QUICK SEARCH (right-click / long-press)
    ========================================== */
