@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function CloudGraphModal({ boards, loading, error, onClose, onLoad, onRefresh }) {
+export default function CloudGraphModal({ boards, loading, error, onClose, onLoad, onDelete, onRefresh }) {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function CloudGraphModal({ boards, loading, error, onClose, onLoa
           ) : (
             <div className="modal-list">
               {boards.map((board) => (
-                <button
+                <div
                   key={board.id}
                   className={`modal-list-item cloud-board-item${selected === board.id ? ' cloud-board-item--selected' : ''}`}
                   onClick={() => setSelected(board.id)}
@@ -32,7 +32,18 @@ export default function CloudGraphModal({ boards, loading, error, onClose, onLoa
                     <span className="modal-list-item-name">{board.name}</span>
                     <span className="modal-list-item-date">{new Date(board.savedAt).toLocaleString()}</span>
                   </span>
-                </button>
+                  <button
+                    className="modal-list-item-delete"
+                    title="Delete from cloud"
+                    aria-label={`Delete ${board.name} from cloud`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(board.id, board.name);
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
               ))}
             </div>
           )}
