@@ -16,6 +16,7 @@ import OSINTNode from './OSINTNode';
 import TimelineNode from './TimelineNode';
 import MediaNode from './MediaNode';
 import QuickSearch from './QuickSearch';
+import { autoLayout } from '../utils/layoutGraph';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
@@ -70,6 +71,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
   const [historyIndex, setHistoryIndex] = useState(0);
   const isUndoRedoing = useRef(false);
   const pushTimerRef = useRef(null);
+  const skipNextPush = useRef(false); // set by auto-layout to suppress one debounced push
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < historyRef.current.length - 1;
@@ -79,6 +81,10 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
     pushTimerRef.current = setTimeout(() => {
       if (isUndoRedoing.current) return;
+      if (skipNextPush.current) {
+        skipNextPush.current = false;
+        return;
+      }
 
       const currentSnapshot = cloneForHistory(nodes, edges);
 
@@ -129,7 +135,39 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     setTimeout(() => { isUndoRedoing.current = false; }, 0);
   }, [historyIndex, setNodes, setEdges, nodes]);
 
-  // Keyboard shortcuts for undo/redo
+  // Auto-layout: rearrange nodes for optimal readability
+  const handleAutoLayout = useCallback(() => {
+    if (nodes.length === 0 || !reactFlowInstance) return;
+
+    // Compute new layout
+    const laidOut = autoLayout(nodes, edges);
+
+    // Push BOTH pre- and post-layout snapshots immediately into history
+    // so undo works the instant the layout is applied — no waiting for debounce.
+    const preSnapshot = cloneForHistory(nodes, edges);
+    const postSnapshot = cloneForHistory(laidOut, edges);
+    historyRef.current = [
+      ...historyRef.current.slice(0, historyIndex + 1),
+      preSnapshot,
+      postSnapshot,
+    ];
+    if (historyRef.current.length > MAX_HISTORY) {
+      historyRef.current = historyRef.current.slice(-MAX_HISTORY);
+    }
+    setHistoryIndex(historyRef.current.length - 1);
+
+    // Suppress the next debounced push — we already pushed both snapshots
+    skipNextPush.current = true;
+
+    setNodes(laidOut);
+
+    // Fit the new layout in view after React commits
+    setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 400 });
+    }, 50);
+  }, [nodes, edges, setNodes, reactFlowInstance, historyIndex]);
+
+  // Keyboard shortcuts for undo/redo/auto-layout
   useEffect(() => {
     const onKeyDown = (e) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -141,11 +179,14 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
       } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
         e.preventDefault();
         redo();
+      } else if (e.key === 'l') {
+        e.preventDefault();
+        handleAutoLayout();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, handleAutoLayout]);
 
   // Expose save/load + undo/redo to parent
   useImperativeHandle(ref, () => ({
@@ -456,6 +497,14 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
           title="Redo (Ctrl+Y)"
         >
           ↪
+        </button>
+        <button
+          className="undo-redo-btn auto-layout-btn"
+          onClick={handleAutoLayout}
+          disabled={nodes.length === 0}
+          title="Auto Layout (Ctrl+L)"
+        >
+          🔀
         </button>
       </div>
 
