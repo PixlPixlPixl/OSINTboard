@@ -1,6 +1,6 @@
 import { pb } from '@serverfire/shared-auth';
 
-const COLLECTION = 'notebook_entries';
+const COLLECTION = 'osint_boards';
 
 function requireAuth() {
   if (!pb?.authStore?.isValid || !pb.authStore.model?.id) {
@@ -10,17 +10,11 @@ function requireAuth() {
 }
 
 function normalize(record) {
-  let graph = {};
-  try {
-    graph = typeof record.content === 'string' ? JSON.parse(record.content) : (record.content || {});
-  } catch {
-    throw new Error('Invalid cloud board response.');
-  }
   return {
     id: record.id,
-    name: record.title || 'Untitled board',
-    nodes: graph.nodes || [],
-    edges: graph.edges || [],
+    name: record.name || 'Untitled board',
+    nodes: record.nodes || [],
+    edges: record.edges || [],
     savedAt: record.updated || record.created,
   };
 }
@@ -34,10 +28,10 @@ export async function listCloudGraphs() {
 export async function saveCloudGraph({ id, name, nodes, edges }) {
   const owner = requireAuth();
   const payload = {
-    user_id: owner,
-    title: name,
-    content: JSON.stringify({ nodes, edges }),
-    labels: ['osintboard'],
+    user: owner,
+    name,
+    nodes,
+    edges,
   };
   const record = id
     ? await pb.collection(COLLECTION).update(id, payload)
