@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ReactFlowProvider } from 'reactflow';
+import { useAuth } from '@serverfire/shared-auth/react';
 import Sidebar from './components/Sidebar';
 import Canvas from './components/Canvas';
 import GraphModal from './components/GraphModal';
+import CloudGraphModal, { CloudLoginPrompt } from './components/CloudGraphModal';
 import {
   saveGraph,
   listGraphs,
@@ -12,6 +14,7 @@ import {
   exportGraphToFile,
   importGraphFromFile,
 } from './data/graphStore';
+import { listCloudGraphs, saveCloudGraph, loadCloudGraph } from './data/cloudGraphStore';
 import './App.css';
 
 const MOBILE_BREAKPOINT = 768;
@@ -56,11 +59,16 @@ const DEMO_EDGES = [
 ];
 
 function App() {
+  const { isAuthenticated } = useAuth();
   const [modalMode, setModalMode] = useState(null);
   const [graphName, setGraphName] = useState('Untitled');
   const [importError, setImportError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [cloudBoards, setCloudBoards] = useState([]);
+  const [cloudBoardId, setCloudBoardId] = useState(null);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudError, setCloudError] = useState(null);
 
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
@@ -120,6 +128,7 @@ function App() {
 
   const openModal = useCallback((mode) => {
     setModalMode(mode);
+    setCloudError(null);
   }, []);
 
   const closeModal = useCallback(() => {
@@ -158,6 +167,63 @@ function App() {
     }
   }, [graphName, openModal, showToast]);
 
+  const handleCloudSave = useCallback(async () => {
+    if (!isAuthenticated) {
+      openModal('cloud-login');
+      return;
+    }
+    const snapshot = canvasRef.current?.getSnapshot();
+    if (!snapshot) return;
+    setCloudLoading(true);
+    try {
+      const board = await saveCloudGraph({
+        id: cloudBoardId,
+        name: graphName === 'Untitled' ? 'Untitled board' : graphName,
+        ...snapshot,
+      });
+      setCloudBoardId(board.id);
+      setGraphName(board.name);
+      showToast('Saved to cloud', 'success');
+    } catch (error) {
+      showToast(error.message || 'Cloud save failed', 'error');
+    } finally {
+      setCloudLoading(false);
+    }
+  }, [cloudBoardId, graphName, isAuthenticated, openModal, showToast]);
+
+  const refreshCloudBoards = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setCloudLoading(true);
+    setCloudError(null);
+    try {
+      setCloudBoards(await listCloudGraphs());
+    } catch (error) {
+      setCloudError(error.message || 'Unable to load cloud boards');
+    } finally {
+      setCloudLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  const handleCloudLoad = useCallback(() => {
+    openModal(isAuthenticated ? 'cloud-load' : 'cloud-login');
+  }, [isAuthenticated, openModal]);
+
+  const loadCloudBoard = useCallback(async (id) => {
+    setCloudLoading(true);
+    try {
+      const board = await loadCloudGraph(id);
+      canvasRef.current?.loadSnapshot(board.nodes, board.edges);
+      setGraphName(board.name);
+      setCloudBoardId(board.id);
+      closeModal();
+      showToast('Loaded from cloud', 'success');
+    } catch (error) {
+      setCloudError(error.message || 'Cloud load failed');
+    } finally {
+      setCloudLoading(false);
+    }
+  }, [closeModal, showToast]);
+
   const handleLoad = useCallback(
     (nodes, edges, name, graphId) => {
       canvasRef.current?.loadSnapshot(nodes, edges);
@@ -173,6 +239,7 @@ function App() {
     canvasRef.current?.loadSnapshot([], []);
     setGraphName('Untitled');
     clearLastOpenGraph();
+    setCloudBoardId(null);
   }, []);
 
   const handleExport = useCallback(() => {
@@ -247,6 +314,9 @@ function App() {
           onDelete={() => openModal('delete')}
           onExport={handleExport}
           onImport={handleImport}
+          cloudAvailable={isAuthenticated}
+          onCloudSave={handleCloudSave}
+          onCloudLoad={handleCloudLoad}
         />
         <Canvas
           ref={canvasRef}
@@ -262,12 +332,28 @@ function App() {
           onChange={handleImportFile}
         />
       </div>
-      {modalMode && (
+      {modalMode && !modalMode.startsWith('cloud-') && (
         <GraphModal
           mode={modalMode}
           onClose={closeModal}
           onSave={handleSave}
           onLoad={handleLoad}
+        />
+      )}
+      {modalMode === 'cloud-load' && (
+        <CloudGraphModal
+          boards={cloudBoards}
+          loading={cloudLoading}
+          error={cloudError}
+          onClose={closeModal}
+          onRefresh={refreshCloudBoards}
+          onLoad={loadCloudBoard}
+        />
+      )}
+      {modalMode === 'cloud-login' && (
+        <CloudLoginPrompt
+          onClose={closeModal}
+          loginUrl={`https://auth.serverfire.net/?redirect=${encodeURIComponent(window.location.href)}`}
         />
       )}
     </ReactFlowProvider>
