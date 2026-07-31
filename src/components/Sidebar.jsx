@@ -15,6 +15,9 @@ const Sidebar = ({
   onDelete,
   onExport,
   onImport,
+  cloudAvailable,
+  onCloudSave,
+  onCloudLoad,
 }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -142,6 +145,13 @@ const Sidebar = ({
               <button className="sidebar-btn" onClick={handleAction(onLoad)}>
                 📂 Load
               </button>
+              <button className="sidebar-btn" onClick={handleAction(onCloudSave)}>
+                ☁️ Save to cloud
+              </button>
+              <button className="sidebar-btn" onClick={handleAction(onCloudLoad)}>
+                ☁️ Load from cloud
+              </button>
+              {!cloudAvailable && <div className="sidebar-cloud-hint">Log in to use cloud boards.</div>}
 
               <div className="sidebar-btn-row">
                 <button className="sidebar-btn sidebar-btn-sm" onClick={handleAction(onNew)}>
