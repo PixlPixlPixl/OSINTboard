@@ -133,7 +133,7 @@ export function importGraphFromFile(file) {
         resolve({
           nodes: data.nodes,
           edges: data.edges,
-          name: data.name || 'Imported',
+          name: data.name || null,
         });
       } catch (e) {
         reject(new Error('Invalid JSON file'));

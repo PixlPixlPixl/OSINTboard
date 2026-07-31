@@ -7,7 +7,6 @@ import GraphModal from './components/GraphModal';
 import CloudGraphModal, { CloudLoginPrompt } from './components/CloudGraphModal';
 import {
   saveGraph,
-  listGraphs,
   getLastOpenGraph,
   setLastOpenGraphId,
   clearLastOpenGraph,
@@ -145,12 +144,11 @@ function App() {
     []
   );
 
-  // Quick-save: overwrite if graph already has a saved name, otherwise open modal
-  const handleQuickSave = useCallback((e) => {
-    e.currentTarget.blur();
-    const graphs = listGraphs();
-    const exists = graphs.some((g) => g.name === graphName);
-    if (exists && graphName !== 'Untitled') {
+  // Quick-save / Save: use the current board name if it has one,
+  // otherwise open the naming modal
+  const handleSaveCurrent = useCallback((e) => {
+    e?.currentTarget?.blur();
+    if (graphName && graphName !== 'Untitled') {
       const snapshot = canvasRef.current?.getSnapshot();
       if (!snapshot) {
         showToast('Nothing to save', 'error');
@@ -260,7 +258,8 @@ function App() {
       try {
         const { nodes, edges, name } = await importGraphFromFile(file);
         canvasRef.current?.loadSnapshot(nodes, edges);
-        setGraphName(name);
+        setGraphName(name || 'Untitled');
+        setCloudBoardId(null); // imported board is a different board
       } catch (err) {
         setImportError(err.message);
       }
@@ -288,7 +287,7 @@ function App() {
             <span className="mobile-header__title">{graphName}</span>
             <button
               className="mobile-header__action"
-              onClick={handleQuickSave}
+              onClick={handleSaveCurrent}
               title={graphName !== 'Untitled' ? 'Save' : 'Save as…'}
             >
               💾
@@ -308,7 +307,7 @@ function App() {
           pendingNodeType={pendingNodeType}
           onClose={closeSidebar}
           onSelectNodeType={handleSelectNodeType}
-          onSave={() => openModal('save')}
+          onSave={handleSaveCurrent}
           onLoad={() => openModal('load')}
           onNew={handleNew}
           onDelete={() => openModal('delete')}
