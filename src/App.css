@@ -1015,6 +1015,29 @@ html, body, #root {
   border-color: #2a2a2a;
 }
 
+.modal-list-item-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.modal-list-item-delete:hover {
+  background: rgba(220, 60, 60, 0.15);
+  border-color: rgba(220, 60, 60, 0.4);
+  color: #ff6b6b;
+}
+
 .modal-list-item-info {
   display: flex;
   flex-direction: column;

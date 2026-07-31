@@ -13,7 +13,7 @@ import {
   exportGraphToFile,
   importGraphFromFile,
 } from './data/graphStore';
-import { listCloudGraphs, saveCloudGraph, loadCloudGraph } from './data/cloudGraphStore';
+import { listCloudGraphs, saveCloudGraph, loadCloudGraph, deleteCloudGraph } from './data/cloudGraphStore';
 import './App.css';
 
 const MOBILE_BREAKPOINT = 768;
@@ -206,6 +206,21 @@ function App() {
     openModal(isAuthenticated ? 'cloud-load' : 'cloud-login');
   }, [isAuthenticated, openModal]);
 
+  const handleCloudDelete = useCallback(async (id, name) => {
+    if (!window.confirm(`Delete "${name}" from cloud?`)) return;
+    setCloudLoading(true);
+    try {
+      await deleteCloudGraph(id);
+      setCloudBoards((prev) => prev.filter((b) => b.id !== id));
+      if (cloudBoardId === id) setCloudBoardId(null);
+      showToast('Deleted from cloud', 'success');
+    } catch (error) {
+      showToast(error.message || 'Cloud delete failed', 'error');
+    } finally {
+      setCloudLoading(false);
+    }
+  }, [cloudBoardId, showToast]);
+
   const loadCloudBoard = useCallback(async (id) => {
     setCloudLoading(true);
     try {
@@ -347,6 +362,7 @@ function App() {
           onClose={closeModal}
           onRefresh={refreshCloudBoards}
           onLoad={loadCloudBoard}
+          onDelete={handleCloudDelete}
         />
       )}
       {modalMode === 'cloud-login' && (
