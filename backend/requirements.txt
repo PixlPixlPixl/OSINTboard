@@ -1,0 +1,3 @@
+maigret[pdf]==0.6.3
+fastapi
+uvicorn

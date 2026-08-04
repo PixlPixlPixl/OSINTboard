@@ -60,7 +60,7 @@ export const NODE_TYPES = [
     label: 'Username',
     icon: '👤',
     color: '#aed581',
-    description: 'Online username / handle',
+    description: 'Online username / handle — right-click to run a Maigret scan',
   },
   {
     type: 'ip',

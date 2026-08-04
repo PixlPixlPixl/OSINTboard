@@ -291,6 +291,36 @@ const OSINTNode = memo(({ id, data, selected }) => {
                 )}
               </div>
             )}
+            {data.nodeType === 'username' && data.maigret && (
+              <div className="osint-node-scan">
+                {data.maigret.status === 'pending' && (
+                  <div className="osint-node-scan-status">Scan queued…</div>
+                )}
+                {data.maigret.status === 'running' && (
+                  <div className="osint-node-scan-status">Scanning…</div>
+                )}
+                {data.maigret.status === 'error' && (
+                  <div className="osint-node-scan-status osint-node-scan-status--error">
+                    Scan failed: {data.maigret.error}
+                  </div>
+                )}
+                {data.maigret.status === 'done' && (
+                  <button
+                    className="osint-node-scan-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.dispatchEvent(
+                        new CustomEvent('maigret-view-results', {
+                          detail: id,
+                        })
+                      );
+                    }}
+                  >
+                    📄 View Results
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

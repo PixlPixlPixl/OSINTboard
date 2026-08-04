@@ -16,7 +16,10 @@ import OSINTNode from './OSINTNode';
 import TimelineNode from './TimelineNode';
 import MediaNode from './MediaNode';
 import QuickSearch from './QuickSearch';
+import NodeContextMenu from './NodeContextMenu';
+import MaigretReport from './MaigretReport';
 import { autoLayout } from '../utils/layoutGraph';
+import { startScan, getScan } from '../utils/maigretApi';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
 const nodeTypes = {
@@ -65,6 +68,9 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const longPressTimer = useRef(null);
   const [quickSearchPos, setQuickSearchPos] = useState(null);
+  const [nodeMenu, setNodeMenu] = useState(null); // {nodeId, x, y} | null
+  const [reportNodeId, setReportNodeId] = useState(null); // node whose maigret popup is open
+  const scanPollRef = useRef(null); // polling interval for the active scan
 
   // --- Undo / Redo system ---
   const historyRef = useRef([{ nodes: [], edges: [] }]);
@@ -341,6 +347,163 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     setQuickSearchPos(null);
   }, []);
 
+  // --- Maigret scan runner ---
+  const clearScanPoll = useCallback(() => {
+    if (scanPollRef.current) {
+      clearInterval(scanPollRef.current);
+      scanPollRef.current = null;
+    }
+  }, []);
+
+  // Never poll after unmount
+  useEffect(() => clearScanPoll, [clearScanPoll]);
+
+  const runMaigretScan = useCallback(
+    async (nodeId) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      const username = node?.data?.label?.trim() || '';
+      if (!username) {
+        setNodeMenu(null);
+        return;
+      }
+
+      // Never leave a second interval behind
+      clearScanPoll();
+
+      const stamp = {
+        username,
+        scanId: null,
+        status: 'pending',
+        error: null,
+        startedAt: new Date().toISOString(),
+        completedAt: null,
+      };
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, maigret: stamp } }
+            : n
+        )
+      );
+
+      let scanId;
+      try {
+        const res = await startScan(username);
+        scanId = res.scanId;
+      } catch (err) {
+        setNodes((nds) =>
+          nds.map((n) =>
+            n.id === nodeId
+              ? {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    maigret: { ...stamp, status: 'error', error: err.message },
+                  },
+                }
+              : n
+          )
+        );
+        return;
+      }
+
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  maigret: { ...stamp, scanId, status: 'running' },
+                },
+              }
+            : n
+        )
+      );
+
+      // Consecutive fetch failures: transient (e.g. backend restarting) — keep
+      // polling so a recovered backend's restart record surfaces; give up after
+      // several in a row so a dead backend doesn't poll forever.
+      let consecutiveErrors = 0;
+
+      scanPollRef.current = setInterval(async () => {
+        let record;
+        try {
+          record = await getScan(scanId);
+          consecutiveErrors = 0;
+        } catch (err) {
+          consecutiveErrors += 1;
+          if (consecutiveErrors >= 3) {
+            clearScanPoll();
+            setNodes((nds) =>
+              nds.map((n) =>
+                n.id === nodeId
+                  ? {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        maigret: {
+                          ...n.data.maigret,
+                          status: 'error',
+                          error: err.message,
+                        },
+                      },
+                    }
+                  : n
+              )
+            );
+          }
+          return;
+        }
+
+        setNodes((nds) => {
+          // Node deleted mid-scan → stop polling
+          if (!nds.some((n) => n.id === nodeId)) {
+            clearScanPoll();
+            return nds;
+          }
+          return nds.map((n) =>
+            n.id === nodeId
+              ? {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    maigret: {
+                      ...n.data.maigret,
+                      status: record.status,
+                      error: record.error,
+                      completedAt: record.completedAt,
+                      reportUrl: record.reportUrl,
+                      resultsUrl: record.resultsUrl,
+                    },
+                  },
+                }
+              : n
+          );
+        });
+
+        if (record.status === 'done' || record.status === 'error') {
+          clearScanPoll();
+        }
+      }, 2000);
+    },
+    [nodes, setNodes, clearScanPoll]
+  );
+
+  // Right-click on a Username node → node context menu
+  const handleNodeContextMenu = useCallback((event, node) => {
+    if (node.data?.nodeType !== 'username') return;
+    // stopPropagation is REQUIRED: otherwise the event bubbles to the
+    // wrapper's onContextMenu and QuickSearch opens on top of this menu.
+    event.preventDefault();
+    event.stopPropagation();
+    setNodeMenu({
+      nodeId: node.id,
+      x: Math.min(event.clientX, window.innerWidth - 220),
+      y: Math.min(event.clientY, window.innerHeight - 160),
+    });
+  }, []);
+
   const handleQuickSelect = useCallback(
     (nodeType) => {
       if (!reactFlowInstance || !quickSearchPos) return;
@@ -411,6 +574,13 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     return () => window.removeEventListener('clear-canvas', handler);
   }, [setNodes, setEdges]);
 
+  // View Results button on a node dispatches this; open the shared popup
+  useEffect(() => {
+    const handler = (e) => setReportNodeId(e.detail);
+    window.addEventListener('maigret-view-results', handler);
+    return () => window.removeEventListener('maigret-view-results', handler);
+  }, []);
+
   // Arrow-key panning when board is focused
   const ARROW_PAN = 40;
 
@@ -480,6 +650,38 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
         />
       )}
 
+      {/* Username node context menu */}
+      {nodeMenu && (
+        <NodeContextMenu
+          x={nodeMenu.x}
+          y={nodeMenu.y}
+          username={
+            nodes.find((n) => n.id === nodeMenu.nodeId)?.data?.label?.trim() ||
+            ''
+          }
+          hasResults={
+            nodes.find((n) => n.id === nodeMenu.nodeId)?.data?.maigret
+              ?.status === 'done'
+          }
+          onRunScan={() => runMaigretScan(nodeMenu.nodeId)}
+          onViewResults={() => setReportNodeId(nodeMenu.nodeId)}
+          onClose={() => setNodeMenu(null)}
+        />
+      )}
+
+      {/* Maigret results popup */}
+      {reportNodeId &&
+        (() => {
+          const maigret = nodes.find((n) => n.id === reportNodeId)?.data
+            ?.maigret;
+          return maigret ? (
+            <MaigretReport
+              maigret={maigret}
+              onClose={() => setReportNodeId(null)}
+            />
+          ) : null;
+        })()}
+
       {/* Undo/Redo toolbar */}
       <div className="undo-redo-toolbar">
         <button
@@ -519,6 +721,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
         onDragOver={onDragOver}
         onPaneClick={onPaneClick}
         onNodesDelete={onNodesDelete}
+        onNodeContextMenu={handleNodeContextMenu}
         nodeTypes={nodeTypes}
         defaultViewport={defaultViewport}
         snapToGrid
