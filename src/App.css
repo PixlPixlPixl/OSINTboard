@@ -580,6 +580,215 @@ html, body, #root {
   font-size: 12px;
 }
 
+/* ==========================================
+   NODE CONTEXT MENU (username nodes)
+   ========================================== */
+
+.node-context-menu {
+  position: fixed;
+  z-index: 300;
+  width: 180px;
+  background: #161616;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.node-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #ddd;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.node-context-menu-item:hover:not(:disabled) {
+  background: #222;
+}
+
+.node-context-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   MAIGRET NODE STATUS + VIEW RESULTS BUTTON
+   ========================================== */
+
+.osint-node-scan-status {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #999;
+}
+
+.osint-node-scan-status--error {
+  color: #e57373;
+}
+
+.osint-node-scan-btn {
+  margin-top: 6px;
+  padding: 3px 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #aed581;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.osint-node-scan-btn:hover {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #fff;
+}
+
+/* ==========================================
+   MAIGRET REPORT POPUP
+   ========================================== */
+
+.maigret-report-header {
+  width: 100%;
+  text-align: left;
+}
+
+.maigret-report-title {
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.maigret-report-meta {
+  color: #888;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.maigret-report-list {
+  width: 100%;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.maigret-report-empty {
+  color: #888;
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+.maigret-report-site {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.maigret-report-site-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.maigret-report-site-name {
+  color: #ddd;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.maigret-report-badge {
+  font-size: 10px;
+  color: #999;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.maigret-report-badge--claimed {
+  color: #aed581;
+  border-color: #3a4d2a;
+  background: #1f2b17;
+}
+
+.maigret-report-link {
+  margin-left: auto;
+  color: #4fc3f7;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.maigret-report-link:hover {
+  text-decoration: underline;
+}
+
+.maigret-report-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.maigret-report-tag {
+  font-size: 10px;
+  color: #aaa;
+  background: #1f1f1f;
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.maigret-report-ids {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #999;
+}
+
+.maigret-report-ids-value {
+  color: #ddd;
+}
+
+.maigret-report-footer {
+  width: 100%;
+  text-align: left;
+  margin-top: 8px;
+}
+
+.maigret-report-download {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #aed581;
+  font-size: 12px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.maigret-report-download:hover {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #fff;
+}
+
 /* Override React Flow default styles */
 .react-flow {
   background: var(--bg-primary) !important;
