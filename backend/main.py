@@ -28,7 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = BASE_DIR / "results"
 MAIGRET_BIN = BASE_DIR / ".venv" / "bin" / "maigret"
 
-IDLE_TIMEOUT = 60   # seconds without API activity before self-exit
+# Seconds without API activity before self-exit; 0 disables (prod systemd
+# service keeps the worker up since nginx can't spawn processes).
+IDLE_TIMEOUT = int(os.environ.get("OSINTBOARD_IDLE_TIMEOUT", "60"))
 IDLE_POLL = 5
 
 app = FastAPI(title="OSINTboard maigret backend")
@@ -55,7 +57,8 @@ def _idle_watch():
             os._exit(0)
 
 
-threading.Thread(target=_idle_watch, daemon=True).start()
+if IDLE_TIMEOUT > 0:
+    threading.Thread(target=_idle_watch, daemon=True).start()
 
 
 class ScanRequest(BaseModel):
