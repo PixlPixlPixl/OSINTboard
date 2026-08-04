@@ -79,7 +79,7 @@ Drop an **External Link** node, double-click it, and paste a YouTube URL. The no
 | 📞 Phone Number | Green | Phone intelligence |
 | ✉️ Email Address | Orange | Email intelligence |
 | 📍 Address | Red | Physical address |
-| 🌍 Place | Cyan | Location, venue, or landmark |
+| 🌍 Place | Light blue | Location, venue, or landmark |
 | 📱 Social Media | Purple | Social profile |
 | 🔗 URL / Website | Cyan | Website or link |
 | 🏢 Company | Yellow | Organization |
@@ -89,8 +89,8 @@ Drop an **External Link** node, double-click it, and paste a YouTube URL. The no
 | 📝 Note | White | Investigator note |
 | 📅 Date / Event | Pink | Date or event marker |
 | 📄 Document | Silver | Document reference |
-| 📊 Timeline | Violet | Chronological timeline with dates |
-| 🖼️ Media | Gold | Photo, video, and audio gallery |
+| 📊 Timeline | Teal | Chronological timeline with dates |
+| 🖼️ Media | Purple | Photo, video, and audio gallery |
 
 ---
 
