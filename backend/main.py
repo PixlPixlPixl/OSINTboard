@@ -150,6 +150,9 @@ def finish_scan(scan_id):
 
 @app.post("/api/maigret/scan")
 def start_scan(req: ScanRequest):
+    # Cap concurrent scans — maigret is CPU/network heavy and this API is public.
+    if sum(1 for p in processes.values() if p.poll() is None) >= 3:
+        raise HTTPException(status_code=429, detail="Too many scans in progress — try again shortly")
     username = req.username.strip()
     if not username:
         raise HTTPException(status_code=400, detail="Username must not be empty")
