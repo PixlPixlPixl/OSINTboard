@@ -183,6 +183,7 @@ def start_scan(req: ScanRequest):
             "-P",
             "-J",
             "simple",
+            "--",
             username,
         ],
         cwd=str(scan_dir),
