@@ -2,6 +2,21 @@ import { useEffect, useCallback, useState } from 'react';
 import { getResults } from '../utils/maigretApi';
 
 /**
+ * Only http(s) links are safe to render as a clickable profile URL. maigret's
+ * result JSON is third-party data, so a `javascript:` or `data:` URL in it must
+ * not become a live href.
+ */
+function safeProfileUrl(url) {
+  if (typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Popup rendering a completed maigret scan's results (parsed from the
  * `-J simple` JSON), with a link to the generated PDF report.
  * Structurally mirrors MediaLightbox (overlay, close button, Escape).
@@ -94,14 +109,16 @@ export default function MaigretReport({ maigret, onClose }) {
                       {result.status.status}
                     </span>
                   )}
-                  <a
-                    className="maigret-report-link"
-                    href={result.status.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Profile ↗
-                  </a>
+                  {safeProfileUrl(result.status.url) ? (
+                    <a
+                      className="maigret-report-link"
+                      href={safeProfileUrl(result.status.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Profile ↗
+                    </a>
+                  ) : null}
                 </div>
                 <div className="maigret-report-tags">
                   {(result.site?.tags || []).map((tag) => (

@@ -11,6 +11,7 @@ still serve results and PDFs of finished scans.
 import glob
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -26,6 +27,13 @@ from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = BASE_DIR / "results"
+RESULTS_DIR_REAL = os.path.realpath(RESULTS_DIR)
+# Scan ids are minted server-side as uuid4().hex (32 lowercase hex chars). A
+# request's {scan_id} is untrusted until it matches that shape exactly.
+SCAN_ID_RE = re.compile(r"\A[0-9a-f]{32}\Z")
+# maigret usernames: conservative allowlist. Also keeps the character set clear
+# of glob metacharacters, since finish_scan globs report filenames by username.
+USERNAME_RE = re.compile(r"\A[A-Za-z0-9._-]{1,64}\Z")
 MAIGRET_BIN = BASE_DIR / ".venv" / "bin" / "maigret"
 
 # Seconds without API activity before self-exit; 0 disables (prod systemd
@@ -65,10 +73,29 @@ class ScanRequest(BaseModel):
     username: str
 
 
+def _scan_dir(scan_id):
+    """Resolve a request-supplied scan_id inside RESULTS_DIR, or None.
+
+    scan_id arrives straight from the URL, so it must match the exact shape the
+    server mints (uuid4().hex) before it is joined to RESULTS_DIR. The path is
+    normalized before the prefix check, so `..` segments and symlinks cannot
+    escape the results directory.
+    """
+    if not isinstance(scan_id, str) or not SCAN_ID_RE.match(scan_id):
+        return None
+    candidate = os.path.realpath(os.path.join(RESULTS_DIR_REAL, scan_id))
+    if not candidate.startswith(RESULTS_DIR_REAL + os.sep):
+        return None
+    return Path(candidate)
+
+
 def _record(scan_id):
     """Read the persisted record for a scan_id, or None."""
-    f = RESULTS_DIR / scan_id / "scan.json"
-    if not f.exists():
+    scan_dir = _scan_dir(scan_id)
+    if scan_dir is None:
+        return None
+    f = scan_dir / "scan.json"
+    if not f.is_file():
         return None
     try:
         return json.loads(f.read_text())
@@ -77,7 +104,10 @@ def _record(scan_id):
 
 
 def _persist(record):
-    scan_dir = RESULTS_DIR / record["id"]
+    scan_dir = _scan_dir(record["id"])
+    if scan_dir is None:
+        # Ids are minted by this process, so a mismatch is a bug, not user input.
+        raise ValueError(f"refusing to persist invalid scan id: {record['id']!r}")
     scan_dir.mkdir(parents=True, exist_ok=True)
     (scan_dir / "scan.json").write_text(json.dumps(record, indent=2))
 
@@ -109,18 +139,18 @@ def finish_scan(scan_id):
     """Daemon thread: wait for the maigret process, finalize outputs."""
     process = processes.pop(scan_id, None)
     record = _record(scan_id)
-    if process is None or record is None:
+    scan_dir = _scan_dir(scan_id)
+    if process is None or record is None or scan_dir is None:
         return
     code = process.wait()
 
-    scan_dir = RESULTS_DIR / scan_id
     now = datetime.now(timezone.utc).isoformat()
 
     if code == 0:
         # Rename outputs. Prefer the exact per-username files — a scan can
         # produce extra reports for similar usernames (sox0j, Soxoj1...).
-        # Usernames can contain path-hostile chars, so find via glob rather
-        # than constructing the filename directly.
+        # Usernames are allowlisted in start_scan, but glob still keeps this
+        # robust if a report is named for a variant of the requested handle.
         username = record.get("username", "")
         pdf_glob = f"{scan_dir}/reports/*.pdf"
         json_glob = f"{scan_dir}/reports/*_simple.json"
@@ -158,9 +188,14 @@ def start_scan(req: ScanRequest):
         raise HTTPException(status_code=400, detail="Username must not be empty")
     if len(username) > 64:
         raise HTTPException(status_code=400, detail="Username must be at most 64 characters")
+    if not USERNAME_RE.match(username):
+        raise HTTPException(
+            status_code=400,
+            detail="Username may only contain letters, digits, dot, underscore and hyphen",
+        )
 
     scan_id = uuid.uuid4().hex
-    scan_dir = RESULTS_DIR / scan_id
+    scan_dir = _scan_dir(scan_id)
     scan_dir.mkdir(parents=True, exist_ok=True)
 
     record = {
@@ -225,16 +260,18 @@ def get_scan(scan_id: str):
 
 @app.get("/api/maigret/results/{scan_id}")
 def get_results(scan_id: str):
-    results_file = RESULTS_DIR / scan_id / "results.json"
-    if not results_file.exists():
+    scan_dir = _scan_dir(scan_id)
+    results_file = scan_dir / "results.json" if scan_dir else None
+    if results_file is None or not results_file.is_file():
         raise HTTPException(status_code=404, detail="Results not found")
     return FileResponse(results_file, media_type="application/json")
 
 
 @app.get("/api/maigret/report/{scan_id}")
 def get_report(scan_id: str):
-    report_file = RESULTS_DIR / scan_id / "report.pdf"
-    if not report_file.exists():
+    scan_dir = _scan_dir(scan_id)
+    report_file = scan_dir / "report.pdf" if scan_dir else None
+    if report_file is None or not report_file.is_file():
         raise HTTPException(status_code=404, detail="Report not found")
     return FileResponse(report_file, media_type="application/pdf")
 
