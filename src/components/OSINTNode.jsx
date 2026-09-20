@@ -4,20 +4,34 @@ import { NODE_TYPE_MAP } from '../data/nodeTypes';
 import MediaAttachments from './MediaAttachments';
 import MediaLightbox from './MediaLightbox';
 
+const YOUTUBE_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+
+/**
+ * Single point of truth: a video id is exactly 11 characters of
+ * [A-Za-z0-9_-], or nothing at all.
+ */
+function assertVideoId(id) {
+  return typeof id === 'string' && YOUTUBE_ID_RE.test(id) ? id : null;
+}
+
 /**
  * Extract a YouTube video ID from various URL formats.
+ *
+ * Returns a validated id, or null. The result always matches YOUTUBE_ID_RE, so
+ * it is safe to interpolate into the embed URL — no quote, `<`, or `:` from the
+ * node label can survive this function.
  */
 function extractYouTubeId(url) {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
 
   const shortMatch = trimmed.match(/^https?:\/\/(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})(?:[?&#]|$)/);
-  if (shortMatch) return shortMatch[1];
+  if (shortMatch) return assertVideoId(shortMatch[1]);
 
   const longMatch = trimmed.match(
     /^https?:\/\/(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com|youtube\.com)\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)([a-zA-Z0-9_-]{11})/
   );
-  if (longMatch) return longMatch[1];
+  if (longMatch) return assertVideoId(longMatch[1]);
 
   return null;
 }
@@ -182,7 +196,7 @@ const OSINTNode = memo(({ id, data, selected }) => {
           <div className="osint-node-video" onClick={() => setEditing(true)}>
             <div className="osint-node-video-embed">
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=0&rel=0`}
+                src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?autoplay=0&rel=0`}
                 title="YouTube video player"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
