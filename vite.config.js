@@ -75,7 +75,7 @@ function maigretLauncher() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/OSINTboard/',
+  base: process.env.VITE_BASE_PATH || '/osint/',
   plugins: [react(), maigretLauncher()],
   server: {
     proxy: {

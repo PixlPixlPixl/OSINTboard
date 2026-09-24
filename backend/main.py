@@ -239,5 +239,11 @@ def get_report(scan_id: str):
     return FileResponse(report_file, media_type="application/pdf")
 
 
+@app.get("/api/health")
+def health():
+    """Uniform health endpoint (manifest `health`) for every app."""
+    return {"ok": True, "app": "osintboard"}
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=int(os.environ.get("PORT", 4108)))
