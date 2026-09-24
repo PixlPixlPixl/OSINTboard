@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@reactflow/core": "^11.11.4",
-    "@serverfire/shared-auth": "file:../serverfire/shared-auth",
+    "@serverfire/shared-auth": "file:../serverfire-infra/shared-auth",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "reactflow": "^11.11.4"
