@@ -11,7 +11,6 @@ node_modules
 dist
 dist-ssr
 *.local
-.hermes/
 
 # Editor directories and files
 .vscode/*
@@ -28,13 +27,38 @@ dist-ssr
 backend/.venv/
 backend/results/
 __pycache__/
+# Scan artifacts: reports + logs can contain a scanned subject's identifying
+# data on top of local filesystem paths.
+report.pdf
+results.json
+scan.json
+scan.log
+
+# Agent / tool state — local plans, sessions, caches. Never publish these:
+# they contain absolute machine paths (e.g. /home/<user>/...) and private
+# workspace layout. If one is ever committed, purge it from history too —
+# adding it here does not remove what is already published.
+.commandcode/
+.hermes/
+.claude/
+.cursor/
+.aider*
+.pi/
+*.code-workspace
+
 # Secrets — never commit
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.jks
+*.keystore
 credentials*
-
-# Tool state
-.commandcode/
+*service-account*.json
+.npmrc
+id_rsa*
+id_ed25519*
+known_hosts

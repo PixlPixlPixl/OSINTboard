@@ -1,0 +1,117 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    # Opened, reopened, ready-for-review, and every new commit on the branch (`synchronize`) — the
+    # default set plus `ready_for_review`, so a draft that is pushed and then marked ready is
+    # checked too. Title/body edits and labels deliberately do not re-run anything.
+    types: [opened, synchronize, reopened, ready_for_review]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A push to a branch or a new commit on a PR supersedes the run before it, and pending runs are
+  # cancelled before their jobs ever start. `main` is exempt: pushes there bypass review, so the run
+  # for a given commit is the only verification that commit will ever get.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+  SEMGREP_VERSION: 1.177.0
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install gitleaks (verified against its published checksum)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+      - name: Scan the working tree for secrets
+        run: |
+          "$RUNNER_TEMP/gitleaks" dir . --redact --no-banner --exit-code 1 \
+            --report-format sarif --report-path "$RUNNER_TEMP/gitleaks.sarif"
+      - uses: actions/upload-artifact@v7.0.1
+        if: always()
+        with:
+          name: gitleaks-sarif
+          path: ${{ runner.temp }}/gitleaks.sarif
+          if-no-files-found: ignore
+
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.2
+      - name: Audit the lockfile against the npm advisory database
+        run: bun audit --audit-level=high
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install Semgrep
+        run: python -m pip install --disable-pip-version-check "semgrep==${SEMGREP_VERSION}"
+      # New findings block the PR that introduced them; on main/schedule the job only reports,
+      # so a rule-pack update surfacing older code never wedges the pipeline.
+      #
+      # Community Edition (`semgrep scan`, no token, no login) over the same five registry rulesets
+      # as the account's policy: default, owasp-top-ten, secrets, security-audit, trailofbits. All
+      # five fetch unauthenticated and load as community rules — 1260 of them over this tree — so
+      # nothing here needs SEMGREP_APP_TOKEN. The findings that matter for this repository come from
+      # them: the child-process family (spawn-shell-true, detect-child-process,
+      # code-string-concat) and the secret patterns (detected-github-token, detected-stripe-api-key).
+      #
+      # No rules are excluded, because nothing here is broken without Pro. Rules marked
+      # `interfile: true` (63 across the packs) still run, at the depth the OSS engine has: the open
+      # redirect rule fires when its source and sink share a function, and only misses the
+      # cross-function case. Excluding them by id would drop real detections, and the ids drift with
+      # every pack update. The 39 rules for Pro-only languages (Apex, C#, Elixir) cannot be parsed by
+      # this engine, but Semgrep already skips rules whose language the target lacks — 311 of the
+      # 1260 rules ran here — so they cost nothing and need no list either.
+      #
+      # What stays out of reach without the account is not rules but capability: cross-function
+      # analysis, and the platform's policy modes, PR comments, SCA and finding lifecycle.
+      # `--oss-only` pins that: if a token ever reaches this job, the scan keeps behaving exactly as
+      # it does today instead of silently gaining the Pro engine and changing what blocks a merge.
+      - name: Scan
+        continue-on-error: ${{ github.event_name != 'pull_request' }}
+        run: |
+          set -euo pipefail
+          baseline=()
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            baseline=("--baseline-commit=${{ github.event.pull_request.base.sha }}")
+          fi
+          semgrep scan "${baseline[@]}" \
+            --config=p/default --config=p/owasp-top-ten --config=p/secrets \
+            --config=p/security-audit --config=p/trailofbits \
+            --oss-only --severity=ERROR --error --metrics=off --quiet \
+            --sarif --output=semgrep.sarif
+      - uses: actions/upload-artifact@v7.0.1
+        if: always()
+        with:
+          name: semgrep-sarif
+          path: semgrep.sarif
+          if-no-files-found: ignore
