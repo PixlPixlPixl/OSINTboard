@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -34,6 +34,22 @@ IDLE_TIMEOUT = int(os.environ.get("OSINTBOARD_IDLE_TIMEOUT", "60"))
 IDLE_POLL = 5
 
 app = FastAPI(title="OSINTboard maigret backend")
+
+# --- Uniform base-path contract (manifest.yml `route`) ----------------------
+# nginx forwards the full URI (/osint/api/...), so rewrite the path in
+# middleware to keep every route below root-relative. A middleware (rather than
+# a router prefix) is used because the routes are declared decorator-style at
+# module scope.
+BASE_PATH = (os.environ.get("BASE_PATH", "/") or "/").rstrip("/")
+
+
+@app.middleware("http")
+async def strip_base_path(request: Request, call_next):
+    if BASE_PATH and request.scope["path"].startswith(BASE_PATH):
+        trimmed = request.scope["path"][len(BASE_PATH):] or "/"
+        request.scope["path"] = trimmed
+        request.scope["raw_path"] = trimmed.encode()
+    return await call_next(request)
 
 scans = {}      # scan_id -> public API record (mirrors scan.json)
 processes = {}  # scan_id -> running Popen handle (not serializable)
