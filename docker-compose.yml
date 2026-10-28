@@ -1,0 +1,50 @@
+# OSINTboard — Docker Compose installation.
+#
+#   docker compose up -d --build     # build and start
+#   docker compose logs -f           # follow logs
+#   docker compose down              # stop (scan results stay in the volume)
+#
+# The app is served at http://localhost:8080 (override with OSINTBOARD_PORT).
+# Graphs remain in the browser; the backend only runs username scans.
+
+name: osintboard
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      # A container should stay up between scans.
+      OSINTBOARD_IDLE_TIMEOUT: "0"
+      PORT: "8000"
+    volumes:
+      # Scan results and PDFs survive restarts/redeploys.
+      - osintboard-results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      additional_contexts:
+        # @serverfire/shared-auth is a file: dependency outside this repo.
+        # Point this at the serverfire-infra checkout when it is not a sibling.
+        shared-auth: ${SHARED_AUTH_PATH:-../serverfire-infra/shared-auth}
+      args:
+        # Standalone Docker deployment is mounted at the server root.
+        VITE_BASE_PATH: /
+    ports:
+      - "${OSINTBOARD_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  osintboard-results:
+    name: osintboard-results

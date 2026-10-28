@@ -43,6 +43,44 @@ The maigret backend is **demand-started**: nothing runs on port 8000 until you c
 
 ---
 
+## Docker Compose
+
+Prefer containers? The whole app (nginx + built frontend + maigret backend) can run with Docker Compose — no Node, Python, or `uv` needed on the host.
+
+```bash
+git clone https://github.com/PixlPixlPixl/OSINTboard.git
+git clone https://github.com/PixlPixlPixl/serverfire-infra.git   # contains @serverfire/shared-auth
+cd OSINTboard
+
+docker compose up -d --build
+```
+
+Open **http://localhost:8080** (override with `OSINTBOARD_PORT`, e.g. `OSINTBOARD_PORT=9000 docker compose up -d`).
+
+The frontend is built from source in a Node stage and served by nginx; `/api/` is proxied to the FastAPI/maigret container. Unlike the dev server, the backend runs continuously (`OSINTBOARD_IDLE_TIMEOUT=0`) and restarts with the container.
+
+**Shared dependency:** the app imports `@serverfire/shared-auth`, which is a `file:` dependency outside this repo. The Docker build passes that directory in as an extra build context. It defaults to `../serverfire-infra/shared-auth`; if your checkout lives elsewhere, point at it explicitly:
+
+```bash
+SHARED_AUTH_PATH=/path/to/serverfire-infra/shared-auth \
+  docker compose up -d --build
+```
+
+Or copy `.env.example` to `.env` and set `SHARED_AUTH_PATH` / `OSINTBOARD_PORT` there.
+
+Useful commands:
+
+```bash
+docker compose logs -f          # follow both containers
+docker compose ps               # status + health
+docker compose down             # stop (keeps scan results)
+docker compose down -v          # stop and delete the results volume
+```
+
+Scan results and PDFs persist in the `osintboard-results` named volume across restarts and rebuilds. To upgrade after pulling changes, run `docker compose up -d --build` again.
+
+---
+
 ## Usage
 
 ### Building a Graph
@@ -99,7 +137,8 @@ Drop an **External Link** node, double-click it, and paste a YouTube URL. The no
 ```
 backend/
 ├── main.py            # FastAPI scan worker: run scan, store results + PDF
-└── requirements.txt   # maigret[pdf]==0.6.3, fastapi, uvicorn
+├── requirements.txt   # maigret[pdf]==0.6.3, fastapi, uvicorn
+└── Dockerfile         # Python 3.12 + venv + maigret image
 src/
 ├── components/
 │   ├── Canvas.jsx         # React Flow canvas, drag/drop, connections, scan polling
@@ -118,6 +157,9 @@ src/
 ├── App.css                # All dark-theme CAD styles
 └── main.jsx               # Entry point
 vite.config.js             # /api proxy + maigret launcher plugin (dev & preview)
+Dockerfile                 # frontend build stage + nginx runtime image
+nginx.conf                 # static app serving + /api reverse proxy
+docker-compose.yml         # web + backend services
 ```
 
 ---
@@ -130,6 +172,7 @@ vite.config.js             # /api proxy + maigret launcher plugin (dev & preview
 - **[FastAPI](https://fastapi.tiangolo.com) + Uvicorn** — local scan worker
 - **[Maigret](https://github.com/soxoj/maigret) 0.6.3** — username OSINT engine (`maigret[pdf]==0.6.3` pinned in `backend/requirements.txt`)
 - **[uv](https://docs.astral.sh/uv/)** — relocatable project venv
+- **Docker Compose** — optional container install: nginx serves the built app and proxies `/api/` to the maigret container
 - **localStorage / cloud** — graph persistence
 
 ---
