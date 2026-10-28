@@ -1,0 +1,27 @@
+# Build artifacts and local state — never send these to the Docker daemon.
+.git
+.github
+node_modules
+dist
+dist-ssr
+*.local
+
+# Python backend
+backend/.venv
+backend/results
+**/__pycache__
+**/*.pyc
+
+# Scan artifacts
+report.pdf
+results.json
+scan.json
+scan.log
+
+# Local tooling / secrets
+.vscode
+.idea
+.env
+.env.*
+!.env.example
+*.log
