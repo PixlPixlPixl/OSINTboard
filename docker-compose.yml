@@ -31,10 +31,6 @@ services:
   web:
     build:
       context: .
-      additional_contexts:
-        # @serverfire/shared-auth is a file: dependency outside this repo.
-        # Point this at the serverfire-infra checkout when it is not a sibling.
-        shared-auth: ${SHARED_AUTH_PATH:-../serverfire-infra/shared-auth}
       args:
         # Standalone Docker deployment is mounted at the server root.
         VITE_BASE_PATH: /
