@@ -212,7 +212,23 @@ def start_scan(req: ScanRequest):
 
     scan_id = uuid.uuid4().hex
     scan_dir = _scan_dir(scan_id)
-    scan_dir.mkdir(parents=True, exist_ok=True)
+    if scan_dir is None:
+        # Same contract as _persist: ids are minted here, so this is a bug, not input.
+        raise ValueError(f"refusing to persist invalid scan id: {scan_id!r}")
+    try:
+        scan_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        # The worker runs as an unprivileged user; a results volume that was created
+        # by an older root-running image stays root-owned, so writes fail here first.
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Scan storage is not writable ({exc.strerror}). "
+                "Fix a pre-existing results volume once with: "
+                "docker run --rm -v osintboard-results:/app/results alpine "
+                "chown -R 10001:10001 /app/results"
+            ),
+        ) from exc
 
     record = {
         "id": scan_id,

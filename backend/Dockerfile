@@ -54,8 +54,20 @@ RUN apt-get update \
 
 COPY main.py .
 
-# Results are persisted in a named volume (see docker-compose.yml).
-RUN mkdir -p /app/results
+# Unprivileged runtime user. Everything that needs root (apt, the venv build)
+# happens above; from here on nothing does. /app/results is owned by this user so
+# Docker seeds a *fresh* named volume with the right owner — pre-existing root-owned
+# volumes need a one-time chown, see README "Upgrading an existing install".
+RUN mkdir -p /app/results \
+    && groupadd --gid 10001 osintboard \
+    && useradd --uid 10001 --gid 10001 --home-dir /app --shell /usr/sbin/nologin osintboard \
+    && chown -R osintboard:osintboard /app
+
+USER osintboard
+
+# maigret caches under $HOME; point it at the owned app dir instead of a home
+# directory the user cannot write.
+ENV HOME=/app
 
 EXPOSE 8000
 

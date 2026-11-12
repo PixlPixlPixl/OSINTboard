@@ -71,6 +71,14 @@ docker compose down -v          # stop and delete the results volume
 
 Scan results and PDFs persist in the `osintboard-results` named volume across restarts and rebuilds. To upgrade after pulling changes, run `docker compose up -d --build` again.
 
+**Upgrading an existing install.** The backend container now runs as an unprivileged user (`osintboard`, uid 10001) instead of root. Volumes created by an older image are owned by root, so scans would fail to write. Fix that once — it keeps every stored scan, and re-running it is harmless:
+
+```bash
+docker run --rm -v osintboard-results:/app/results alpine chown -R 10001:10001 /app/results
+```
+
+New installs need nothing: the volume inherits that owner from the image.
+
 ---
 
 ## Usage
