@@ -19,6 +19,7 @@ import QuickSearch from './QuickSearch';
 import NodeContextMenu from './NodeContextMenu';
 import MaigretReport from './MaigretReport';
 import { autoLayout } from '../utils/layoutGraph';
+import { getEdgeHandles, reorientEdges } from '../utils/edgeHandles';
 import { startScan, getScan } from '../utils/maigretApi';
 import { NODE_TYPE_MAP } from '../data/nodeTypes';
 
@@ -81,6 +82,14 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < historyRef.current.length - 1;
+
+  // Node internals carry the measured width/height that edge routing uses to
+  // decide which side of a node an edge should leave from. They live in the
+  // React Flow store, not in the `nodes` state, so read them when possible.
+  const getLiveNodes = useCallback(() => {
+    const live = reactFlowInstance?.getNodes?.();
+    return live && live.length ? live : nodes;
+  }, [reactFlowInstance, nodes]);
 
   // Debounced push: after changes settle, push a snapshot to history
   const schedulePush = useCallback(() => {
@@ -166,12 +175,13 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     skipNextPush.current = true;
 
     setNodes(laidOut);
+    setEdges((eds) => reorientEdges(eds, laidOut));
 
     // Fit the new layout in view after React commits
     setTimeout(() => {
       reactFlowInstance.fitView({ padding: 0.2, duration: 400 });
     }, 50);
-  }, [nodes, edges, setNodes, reactFlowInstance, historyIndex]);
+  }, [nodes, edges, setNodes, setEdges, reactFlowInstance, historyIndex]);
 
   // Keyboard shortcuts for undo/redo/auto-layout
   useEffect(() => {
@@ -208,8 +218,15 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
 
       isUndoRedoing.current = true;
       setNodes(newNodes);
-      setEdges(newEdges);
+      setEdges(reorientEdges(newEdges, newNodes));
       setTimeout(() => { isUndoRedoing.current = false; }, 0);
+
+      // Nodes are measured once they mount, so re-route with their real sizes
+      // shortly after loading (this runs before the debounced history push).
+      setTimeout(() => {
+        const live = reactFlowInstance?.getNodes?.();
+        if (live?.length) setEdges((eds) => reorientEdges(eds, live));
+      }, 100);
 
       // Reset history with this as the initial state
       historyRef.current = [cloneForHistory(newNodes, newEdges)];
@@ -223,16 +240,25 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
 
   const onConnect = useCallback(
     (params) => {
+      const sourceNode = nodes.find((n) => n.id === params.source);
+      const targetNode = nodes.find((n) => n.id === params.target);
+
+      // Always route the edge along the sides that face each other, no matter
+      // which dot the user dragged from.
+      const liveNodes = getLiveNodes();
+      const handles = getEdgeHandles(
+        liveNodes.find((n) => n.id === params.source),
+        liveNodes.find((n) => n.id === params.target)
+      );
+
       const newEdge = {
         ...params,
+        ...handles,
         style: { stroke: '#aaa', strokeWidth: 2 },
         markerEnd: { type: MarkerType.ArrowClosed, color: '#aaa' },
         type: 'smoothstep',
         animated: false,
       };
-
-      const sourceNode = nodes.find((n) => n.id === params.source);
-      const targetNode = nodes.find((n) => n.id === params.target);
 
       // Propagate dateValue from source (date module → any non-date, non-timeline target)
       if (sourceNode?.data?.dateValue) {
@@ -264,8 +290,13 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
 
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, setNodes, nodes]
+    [setEdges, setNodes, nodes, getLiveNodes]
   );
+
+  // Keep edges on the side of the node that faces their partner while nodes move
+  const onNodeDragStop = useCallback(() => {
+    setEdges((eds) => reorientEdges(eds, getLiveNodes()));
+  }, [setEdges, getLiveNodes]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -331,7 +362,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
     [isMobile, pendingNodeType, reactFlowInstance, addNodeAtPosition, onNodePlaced]
   );
 
-  const onNodesDelete = useCallback((deleted) => {
+  const onNodesDelete = useCallback(() => {
     // React Flow handles edge deletion automatically
   }, []);
 
@@ -721,6 +752,7 @@ const Canvas = forwardRef(function Canvas({ isMobile, pendingNodeType, onNodePla
         onDragOver={onDragOver}
         onPaneClick={onPaneClick}
         onNodesDelete={onNodesDelete}
+        onNodeDragStop={onNodeDragStop}
         onNodeContextMenu={handleNodeContextMenu}
         nodeTypes={nodeTypes}
         defaultViewport={defaultViewport}
