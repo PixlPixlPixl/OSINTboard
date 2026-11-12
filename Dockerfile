@@ -2,7 +2,10 @@
 
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-bookworm-slim AS build
+# Pinned to a fixed Node.js patch release: the floating 22 tag resolved to builds
+# affected by CVE-2026-111497 (Brotli decoder out-of-bounds write / RCE). Node 20 and
+# older, 23 and 25 are end-of-life and get no patch. Bump to 22.23.x or later on this line.
+FROM node:22.23.5-bookworm-slim AS build
 
 # Docker is a standalone deployment: serve the app from the server root.
 ARG VITE_BASE_PATH=/
